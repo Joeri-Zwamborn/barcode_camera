@@ -6,103 +6,115 @@ The application continuously captures frames from a USB webcam while listening f
 
 Designed for manufacturing, warehouse, and quality-control environments, the system runs unattended as a systemd service and is easily deployable to multiple Raspberry Pi devices.
 
-#Features
-Automatic image capture on barcode scan
-Continuous camera feed for minimal capture latency
-Automatic filename generation using scanned barcode
-Runs as a background systemd service
-Modular Python architecture
-Thread-safe camera capture
-Logging via systemd journal
-Prepared for Microsoft SharePoint integration
-Easy deployment using install.sh
-Hardware Requirements
-Tested Hardware
-Component	Model
-Raspberry Pi	Raspberry Pi 4
-Camera	Logitech C270 USB Webcam
-Barcode Scanner	Datalogic QuickScan QD2430
-Operating System	Raspberry Pi OS Bookworm
-Software Requirements
-Python 3
-OpenCV
-evdev
-requests
-msal (future SharePoint integration)
-Project Structure
-barcode_camera/
-│
-├── main.py                 # Application entry point
-├── camera.py               # Camera handling
-├── scanner.py              # Barcode scanner interface
-├── storage.py              # Image storage / SharePoint upload
-├── config.py               # Configuration
-│
-├── requirements.txt
-├── install.sh
-├── barcode_camera.service
-│
-└── README.md
+### Features
+
+- Automatic image capture on barcode scan  
+-  Continuous camera feed for minimal capture latency
+- Automatic filename generation using scanned barcode  
+- Runs as a background systemd service  
+- Modular Python architecture  
+- Thread-safe camera capture  
+- Logging via systemd journal  
+- Prepared for Microsoft SharePoint integration  
+- Easy deployment using install.sh  
+
+### Hardware Requirements  
+
+Tested Hardware  
+  
+Raspberry Pi: Raspberry Pi 4  
+Camera: Logitech C270 USB Webcam  
+Barcode Scanner: Datalogic QuickScan QD2430  
+Operating System: Raspberry Pi OS Bookworm  
+
+
+### Software Requirements
+
+Python 3  
+OpenCV  
+evdev  
+requests  
+msal (future SharePoint integration)  
+
+### Project Structure
+
+barcode_camera/  
+│  
+├── main.py                 # Application entry point  
+├── camera.py               # Camera handling  
+├── scanner.py              # Barcode scanner interface  
+├── storage.py              # Image storage / SharePoint upload  
+├── config.py               # Configuration  
+│  
+├── requirements.txt  
+├── install.sh  
+├── barcode_camera.service  
+│  
+└── README.md  
+
 ## Installation
 
-Clone the repository:
+Clone the repository:  
 
-git clone <repository-url>
-cd barcode_camera
+git clone <repository-url>  
+cd barcode_camera  
 
-Make the installer executable:
+Make the installer executable:  
 
-chmod +x install.sh
+chmod +x install.sh  
 
-Run the installer:
+Run the installer:  
 
-./install.sh
+./install.sh  
 
-The installer will:
+The installer will:  
 
-Install required packages
-Create a Python virtual environment
-Install Python dependencies
-Install the systemd service
-Enable automatic startup
-Start the application
-Wiring
-Camera
+- Install required packages
+- Create a Python virtual environment
+- Install Python dependencies
+- Install the systemd service
+- Enable automatic startup
+- Start the application
 
-Connect the Logitech C270 to any available USB port.
+## Wiring
 
-Verify detection:
+### Camera
 
-ls /dev/video*
+Connect the Logitech C270 to any available USB port.  
 
-Expected output:
+Verify detection:  
 
-/dev/video0
-Barcode Scanner
+ls /dev/video*  
 
-Connect the Datalogic QuickScan QD2430 via USB.
+Expected output:  
 
-Verify detection:
+/dev/video0  
 
-cat /proc/bus/input/devices
+### Barcode Scanner  
 
-Expected output should include:
+Connect the Datalogic QuickScan QD2430 via USB.  
 
-Datalogic ADC Inc. Handheld Barcode Scanner
+Verify detection:  
 
-Determine the stable device path:
+cat /proc/bus/input/devices  
 
-ls -l /dev/input/by-id/
+Expected output should include:  
 
-Configure the scanner device in config.py.
+Datalogic ADC Inc. Handheld Barcode Scanner  
 
-Example:
+Determine the stable device path:  
 
-SCANNER_DEVICE = "/dev/input/by-id/usb-Datalogic_ADC_Inc._Handheld_Barcode_Scanner-event-kbd"
+ls -l /dev/input/by-id/  
 
-Using the /dev/input/by-id path is recommended because it remains stable across reboots.
+Configure the scanner device in config.py.  
 
-Configuration
+#### Example:
+
+SCANNER_DEVICE = "/dev/input/by-id/usb-Datalogic_ADC_Inc._Handheld_Barcode_Scanner-event-kbd"  
+
+Using the /dev/input/by-id path is recommended because it remains stable across reboots.  
+
+## Configuration
 
 Application settings are stored in config.py.
 
@@ -133,7 +145,7 @@ python3 main.py
 
 Normally the application is started automatically by systemd.
 
-Service Management
+#### Service Management
 
 Check status:
 
@@ -180,7 +192,8 @@ Re-run the installer:
 The installer updates the service without requiring manual configuration.
 
 ## Troubleshooting
-Camera not detected
+
+### Camera not detected
 
 Check:
 
@@ -191,7 +204,8 @@ If no camera is listed:
 Verify the USB connection.
 Test with another USB port.
 Verify camera functionality using another application.
-Scanner not detected
+
+### Scanner not detected
 
 Check:
 
@@ -205,15 +219,16 @@ ls -l /dev/input/by-id
 
 Update SCANNER_DEVICE if necessary.
 
-Images are not saved
+### Images are not saved
 
 Check:
 
-Camera service is running.
-LOCAL_SAVE_DIR exists.
-Disk has available space.
-Application logs for errors.
-Service will not start
+Camera service is running.  
+LOCAL_SAVE_DIR exists.  
+Disk has available space.  
+Application logs for errors.  
+
+### Service will not start  
 
 Check status:
 
@@ -224,12 +239,12 @@ Then inspect the log:
 journalctl -u barcode_camera.service
 
 ## Future Roadmap
-Microsoft Graph integration
-Automatic SharePoint uploads
-Offline upload queue with retry
-Image upload status reporting
-Possible multiple camera support
-Configuration file (YAML)
-Automatic software updates
-Possible centralized fleet management
+- Microsoft Graph integration
+- Automatic SharePoint uploads
+- Offline upload queue with retry
+- Image upload status reporting
+- Possible multiple camera support
+- Configuration file (YAML)
+- Automatic software updates
+- Possible centralized fleet management
 
