@@ -1,0 +1,4 @@
+opencv-python
+evdev
+msal
+requests
