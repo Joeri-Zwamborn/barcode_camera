@@ -10,11 +10,15 @@ scanner = BarcodeScanner()
 
 print("Ready.")
 
-for barcode in scanner:
+try:
+    for barcode in scanner:
 
-    frame = camera.get_frame()
+        frame = camera.get_frame()
 
-    if frame is None:
-        continue
+        if frame is None:
+            continue
 
-    save_image(barcode, frame)
+        save_image(barcode, frame)
+
+finally:
+    camera.close()

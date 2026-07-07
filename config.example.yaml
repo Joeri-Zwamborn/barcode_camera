@@ -1,1 +1,20 @@
+station:
+  name: "Test_station"
 
+camera:
+  index: 0
+
+scanner:
+  device: "/dev/input/by-id/usb-Datalogic_ADC_Inc._Handheld_Barcode_Scanner-event-kbd"
+
+storage:
+  local_directory: "/home/admin/Production_Photos"
+
+sharepoint:
+  enabled: false
+  tenant_id: ""
+  client_id: ""
+  client_secret: ""
+  site_id: ""
+  drive_id: ""
+  folder: "Production Photos"

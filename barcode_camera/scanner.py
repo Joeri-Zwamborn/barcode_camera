@@ -1,4 +1,5 @@
 from evdev import InputDevice, categorize, ecodes
+from config import SCANNER_DEVICE
 import threading
 
 
@@ -44,7 +45,7 @@ class BarcodeScanner:
 
     def __init__(self, device="/dev/input/by-id/usb-Datalogic_ADC_Inc._Handheld_Barcode_Scanner_S_N_G19B86660-event-kbd"):
 
-        self.device = InputDevice(device)
+        self.device = InputDevice(SCANNER_DEVICE)
         self.shift = False
 
     def __iter__(self):

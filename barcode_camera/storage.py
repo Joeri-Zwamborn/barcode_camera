@@ -5,13 +5,12 @@ import datetime
 from config import LOCAL_SAVE_DIR
 
 os.makedirs(LOCAL_SAVE_DIR, exist_ok=True)
-now = datetime.datetime.now()
 
 def save_image(barcode, frame):
-
+    now = datetime.datetime.now()
     filename = os.path.join(
         LOCAL_SAVE_DIR,
-        f"{barcode + now}.png"
+        f"{barcode}_{now}.png"
     )
 
     if cv2.imwrite(filename, frame):
