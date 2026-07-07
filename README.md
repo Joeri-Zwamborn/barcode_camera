@@ -1,4 +1,4 @@
-Barcode Camera System
+#Barcode Camera System
 
 A Raspberry Pi–based image capture system that automatically photographs an item when its barcode is scanned.
 
@@ -6,7 +6,7 @@ The application continuously captures frames from a USB webcam while listening f
 
 Designed for manufacturing, warehouse, and quality-control environments, the system runs unattended as a systemd service and is easily deployable to multiple Raspberry Pi devices.
 
-Features
+#Features
 Automatic image capture on barcode scan
 Continuous camera feed for minimal capture latency
 Automatic filename generation using scanned barcode
@@ -43,7 +43,7 @@ barcode_camera/
 ├── barcode_camera.service
 │
 └── README.md
-Installation
+#Installation
 
 Clone the repository:
 
@@ -125,7 +125,7 @@ SHAREPOINT = {
     "site_id": "",
     "drive_id": ""
 }
-Running the Application
+#Running the Application
 
 To run manually:
 
@@ -158,7 +158,7 @@ sudo systemctl enable barcode_camera.service
 Disable automatic startup:
 
 sudo systemctl disable barcode_camera.service
-Logging
+#Logging
 
 View the live application log:
 
@@ -177,9 +177,9 @@ Re-run the installer:
 
 ./install.sh
 
-The installer safely updates the service without requiring manual configuration.
+The installer updates the service without requiring manual configuration.
 
-Troubleshooting
+#Troubleshooting
 Camera not detected
 
 Check:
@@ -222,21 +222,14 @@ sudo systemctl status barcode_camera.service
 Then inspect the log:
 
 journalctl -u barcode_camera.service
-Future Roadmap
+
+#Future Roadmap
 Microsoft Graph integration
 Automatic SharePoint uploads
 Offline upload queue with retry
 Image upload status reporting
-Multiple camera support
+Possible multiple camera support
 Configuration file (YAML)
 Automatic software updates
-Centralized fleet management
-License
+Possible centralized fleet management
 
-Specify your preferred license here.
-
-Examples:
-
-MIT
-Apache 2.0
-Proprietary (Internal Company Use)
