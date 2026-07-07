@@ -1,4 +1,4 @@
-#Barcode Camera System
+# Barcode Camera System
 
 A Raspberry Pi–based image capture system that automatically photographs an item when its barcode is scanned.
 
@@ -43,7 +43,7 @@ barcode_camera/
 ├── barcode_camera.service
 │
 └── README.md
-#Installation
+## Installation
 
 Clone the repository:
 
@@ -125,7 +125,7 @@ SHAREPOINT = {
     "site_id": "",
     "drive_id": ""
 }
-#Running the Application
+## Running the Application
 
 To run manually:
 
@@ -179,7 +179,7 @@ Re-run the installer:
 
 The installer updates the service without requiring manual configuration.
 
-#Troubleshooting
+## Troubleshooting
 Camera not detected
 
 Check:
@@ -223,7 +223,7 @@ Then inspect the log:
 
 journalctl -u barcode_camera.service
 
-#Future Roadmap
+## Future Roadmap
 Microsoft Graph integration
 Automatic SharePoint uploads
 Offline upload queue with retry
