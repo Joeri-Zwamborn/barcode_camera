@@ -1,15 +1,17 @@
 import cv2
 import os
+import datetime
 
 from config import LOCAL_SAVE_DIR
 
 os.makedirs(LOCAL_SAVE_DIR, exist_ok=True)
+now = datetime.datetime.now()
 
 def save_image(barcode, frame):
 
     filename = os.path.join(
         LOCAL_SAVE_DIR,
-        f"{barcode}.png"
+        f"{barcode + now}.png"
     )
 
     if cv2.imwrite(filename, frame):
