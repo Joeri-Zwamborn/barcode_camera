@@ -5,7 +5,6 @@ set -e
 APP_NAME="barcode_camera"
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
 VENV_DIR="$APP_DIR/venv"
-SERVICE_FILE="$APP_DIR/barcode_camera.service"
 
 echo "======================================"
 echo "Installing Barcode Camera"
@@ -58,15 +57,9 @@ mkdir -p "$HOME/Production_Photos"
 
 echo "Installing systemd service..."
 
-sudo cp "$SERVICE_FILE" /etc/systemd/system/
-
 sudo systemctl daemon-reload
 
 echo
 echo "======================================"
 echo "Installation complete!"
 echo "======================================"
-
-echo
-echo "Service status:"
-sudo systemctl --no-pager status barcode_camera.service
