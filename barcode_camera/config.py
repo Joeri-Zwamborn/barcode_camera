@@ -1,25 +1,13 @@
-class Station:
-    def __init__(self, raw):
-        self.name = raw ['name']
+from pathlib import Path
+import yaml
 
-class Camera:
-    def __init__(self, raw):
-        self.index = raw ['index']
+CONFIG_PATH = Path(__file__).resolve().parent.parent / "config.yaml"
 
-class Scanner:
-    def __init__(self, raw):
-        self.device = raw ['device']
+with CONFIG_PATH.open(encoding="utf-8") as config_file:
+    config = yaml.safe_load(config_file)
 
-class Storage:
-    def __init__(self, raw):
-        self.loc_dir = raw ['local_directory']
+CAMERA_INDEX = config["camera"]["index"]
+SCANNER_DEVICE = config["scanner"]["device"]
+LOCAL_SAVE_DIR = config["storage"]["local_directory"]
 
-class sharepoint:
-    def __init__(self, raw):
-        self.url = raw ['drive_id']
-        self.username = raw ['client_id']
-        self.password = raw ['client_secret']
-        self.folder = raw ['folder']
-        self.enabled = raw ['enabled']
-
-config = Config(yaml.safe_load(open('config.example.yaml')))
+SHAREPOINT_ENABLED = config["sharepoint"]["enabled"]
