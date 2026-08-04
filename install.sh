@@ -25,10 +25,19 @@ sudo apt install -y \
     python3-msal \
     git
 
+CONFIG_FILE="$APP_DIR/config.yaml"
+CONFIG_EXAMPLE="$APP_DIR/config.example.yaml"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Creating config.yaml from the example configuration..."
+    cp "$CONFIG_EXAMPLE" "$CONFIG_FILE"
+    echo "Edit $CONFIG_FILE with this Pi's camera, scanner, and storage settings."
+fi
+
 echo "Creating Python virtual environment..."
 
 if [ ! -d "$VENV_DIR" ]; then
-    python3 -m venv "$VENV_DIR"
+    python3 -m venv --system-site-packages "$VENV_DIR"
 fi
 
 echo "Installing Python packages..."
@@ -52,10 +61,6 @@ echo "Installing systemd service..."
 sudo cp "$SERVICE_FILE" /etc/systemd/system/
 
 sudo systemctl daemon-reload
-
-sudo systemctl enable barcode_camera.service
-
-sudo systemctl restart barcode_camera.service
 
 echo
 echo "======================================"
