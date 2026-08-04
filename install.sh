@@ -55,10 +55,6 @@ echo "Creating image directory..."
 
 mkdir -p "$HOME/Production_Photos"
 
-echo "Installing systemd service..."
-
-sudo systemctl daemon-reload
-
 echo
 echo "======================================"
 echo "Installation complete!"
