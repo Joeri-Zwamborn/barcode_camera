@@ -47,7 +47,7 @@ class BarcodeScanner:
     def __init__(self):
         try:
             self.device = InputDevice(SCANNER_DEVICE)
-            logger.info(f"Scanner device initialized: {SCANNER_DEVICE}")
+            logger.info("Scanner device initialized: %s", SCANNER_DEVICE)
         except Exception:
             logger.exception("Failed to initialize scanner device.")
             raise
@@ -79,7 +79,7 @@ class BarcodeScanner:
                     if code == "KEY_ENTER":
 
                         if barcode:
-                            logger.info(f"Barcode scanned: {barcode}")
+                            logger.info("Barcode scanned.")
                             yield barcode
                             barcode = ""
 

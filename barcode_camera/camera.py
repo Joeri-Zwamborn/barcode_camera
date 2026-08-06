@@ -1,8 +1,9 @@
 import cv2
 import threading
 import logging
-
+from log_rate_limit import StreamRateLimitFilter, RateLimit
 logger = logging.getLogger(__name__)
+logger.addfilter(StreamRateLimitFilter(RateLimit(max_calls=5, period=1)))
 
 class Camera:
 
