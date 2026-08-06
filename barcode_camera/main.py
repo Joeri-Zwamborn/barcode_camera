@@ -18,13 +18,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-print("Ready to scan barcodes. Please scan a barcode to capture an image.")
+
 logger.info("Starting barcode scanning.")
+print("Ready to scan barcodes. Please scan a barcode to capture an image.")
 
 def main():
-    camera = Camera(CAMERA_INDEX)
-    scanner = BarcodeScanner()
     try:
+        camera = Camera(CAMERA_INDEX)
+        scanner = BarcodeScanner()
         for barcode in scanner:
             frame = camera.get_frame()
             if frame is None:

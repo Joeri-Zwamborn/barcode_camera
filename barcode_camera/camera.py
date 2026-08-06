@@ -30,7 +30,13 @@ class Camera:
             if not ok:
                 read_logger.warning("Could not read frame from camera")
                 continue
+            cv2.imshow("Barcode Camera", frame)
 
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                logger.info("Exiting camera loop due to 'q' key press.")
+                cv2.destroyAllWindows()
+                self.running = False
+                break
             with self.lock:
                 self.frame = frame.copy()
 
@@ -47,3 +53,4 @@ class Camera:
 
         self.running = False
         self.cap.release()
+        cv2.destroyAllWindows()
