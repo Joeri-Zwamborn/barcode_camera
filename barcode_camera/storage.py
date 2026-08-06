@@ -1,10 +1,12 @@
-from asyncio.log import logger
-
+import logging
 import cv2
 import os
 import datetime
 
 from config import LOCAL_SAVE_DIR
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 os.makedirs(LOCAL_SAVE_DIR, exist_ok=True)
 

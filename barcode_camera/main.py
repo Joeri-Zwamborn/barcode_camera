@@ -7,22 +7,25 @@ from config import CAMERA_INDEX
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-camera = Camera(CAMERA_INDEX)
 
-scanner = BarcodeScanner()
 print("Ready to scan barcodes. Please scan a barcode to capture an image.")
 logger.info("Starting barcode scanning.")
 
-try:
-    for barcode in scanner:
+def main():
+    camera = Camera(CAMERA_INDEX)
+    scanner = BarcodeScanner()
+    logger.exception("An error occurred while scanning barcodes.")
+    try:
 
-        frame = camera.get_frame()
+        for barcode in scanner:
 
-        if frame is None:
-            continue
+            frame = camera.get_frame()
 
-        save_image(barcode, frame)
+            if frame is None:
+                continue
 
-finally:
-    camera.close()
-    logging.info("Camera closed. Exiting program.")
+            save_image(barcode, frame)
+
+    finally:
+        camera.close()
+        logging.info("Camera closed. Exiting program.")
