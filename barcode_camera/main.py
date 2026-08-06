@@ -6,7 +6,7 @@ import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
-LOG_FILE_PATH = Path(__file__).parent / "camera.log"
+LOG_FILE_PATH = Path(__file__).resolve().parent.parent / "main.log"
 
 logging.basicConfig(
     level=logging.INFO,
