@@ -1,9 +1,11 @@
 import cv2
 import threading
 import logging
-from log_rate_limit import StreamRateLimitFilter, RateLimit
+from rate_limit import PerSecondRateLimit
+
 logger = logging.getLogger(__name__)
-logger.addfilter(StreamRateLimitFilter(RateLimit(max_calls=5, period=1)))
+read_logger = logging.getLogger(f"{__name__}.frame_read")
+read_logger.addFilter(PerSecondRateLimit(max_messages=1))
 
 class Camera:
 
@@ -25,13 +27,12 @@ class Camera:
 
         while self.running:
             try:
-                ok, frame = self.cap.read()
-            except:
-                logger.warning("Error reading frame from camera")
-                pass
-            if ok:
-                with self.lock:
-                    self.frame = frame.copy()
+                frame = self.cap.read()
+            except Exception:
+                read_logger.warning("Error reading frame from camera")
+                continue
+            with self.lock:
+                self.frame = frame.copy()
 
     def get_frame(self):
 
