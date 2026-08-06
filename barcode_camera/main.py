@@ -2,6 +2,7 @@ from camera import Camera
 from scanner import BarcodeScanner
 from storage import save_image
 import logging
+
 from config import CAMERA_INDEX
 
 logging.basicConfig(

@@ -26,11 +26,11 @@ class Camera:
     def _loop(self):
 
         while self.running:
-            try:
-                frame = self.cap.read()
-            except Exception:
-                read_logger.warning("Error reading frame from camera")
+            ok, frame = self.cap.read()
+            if not ok:
+                read_logger.warning("Could not read frame from camera")
                 continue
+
             with self.lock:
                 self.frame = frame.copy()
 
