@@ -2,13 +2,13 @@ import logging
 import threading
 import time
 
-class PerSecondRateLimit(logging.filter):
+class PerSecondRateLimit(logging.Filter):
         def __init__(self, max_messages: int, period_seconds: float = 1.0):
             super().__init__()
             self.max_messages = max_messages
             self.period_seconds = period_seconds
             self.message_count = 0
-            self.window_started = time.monotonic
+            self.window_started = time.monotonic()
             self.lock = threading.Lock()
 
         def filter(self, record: logging.LogRecord) -> bool:
