@@ -4,9 +4,11 @@ from storage import save_image
 import logging
 from config import CAMERA_INDEX
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
 logger = logging.getLogger(__name__)
-
 
 print("Ready to scan barcodes. Please scan a barcode to capture an image.")
 logger.info("Starting barcode scanning.")

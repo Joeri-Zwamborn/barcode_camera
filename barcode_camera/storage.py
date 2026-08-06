@@ -5,7 +5,6 @@ import datetime
 
 from config import LOCAL_SAVE_DIR
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 os.makedirs(LOCAL_SAVE_DIR, exist_ok=True)
