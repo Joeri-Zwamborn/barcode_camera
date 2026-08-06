@@ -14,18 +14,17 @@ logger.info("Starting barcode scanning.")
 def main():
     camera = Camera(CAMERA_INDEX)
     scanner = BarcodeScanner()
-    logger.exception("An error occurred while scanning barcodes.")
     try:
-
         for barcode in scanner:
-
             frame = camera.get_frame()
-
             if frame is None:
                 continue
-
             save_image(barcode, frame)
-
+    except Exception:
+        logger.exception("An error occurred while scanning barcodes.")
     finally:
         camera.close()
         logging.info("Camera closed. Exiting program.")
+
+if __name__ == "__main__":
+    main()
