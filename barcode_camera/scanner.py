@@ -1,5 +1,9 @@
 from evdev import InputDevice, categorize, ecodes
 from config import SCANNER_DEVICE
+import logging  
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class BarcodeScanner:
     """
@@ -42,64 +46,72 @@ class BarcodeScanner:
     }
 
     def __init__(self):
-
-        self.device = InputDevice(SCANNER_DEVICE)
+        try:
+            self.device = InputDevice(SCANNER_DEVICE)
+            logger.info(f"Scanner device initialized: {SCANNER_DEVICE}")
+        except Exception:
+            logger.exception("Failed to initialize scanner device.")
+            raise
         self.shift = False
 
     def __iter__(self):
 
         barcode = ""
+        try:
+            for event in self.device.read_loop():
 
-        for event in self.device.read_loop():
-
-            if event.type != ecodes.EV_KEY:
-                continue
-
-            key = categorize(event)
-
-            code = key.keycode
-
-            if isinstance(code, list):
-                code = code[0]
-
-            # Key pressed
-            if key.keystate == key.key_down:
-
-                if code in self.SHIFT_KEYS:
-                    self.shift = True
+                if event.type != ecodes.EV_KEY:
                     continue
 
-                if code == "KEY_ENTER":
+                key = categorize(event)
 
-                    if barcode:
-                        yield barcode
-                        barcode = ""
+                code = key.keycode
 
-                    continue
+                if isinstance(code, list):
+                    code = code[0]
 
-                # Letters
-                if code.startswith("KEY_"):
+                # Key pressed
+                if key.keystate == key.key_down:
 
-                    value = code[4:]
+                    if code in self.SHIFT_KEYS:
+                        self.shift = True
+                        continue
 
-                    if len(value) == 1 and value.isalpha():
+                    if code == "KEY_ENTER":
 
-                        barcode += (
-                            value.upper()
-                            if self.shift
-                            else value.lower()
-                        )
+                        if barcode:
+                            logger.info(f"Barcode scanned: {barcode}")
+                            yield barcode
+                            barcode = ""
 
                         continue
 
-                # Symbols
-                if code in self.KEYMAP:
+                    # Letters
+                    if code.startswith("KEY_"):
 
-                    normal, shifted = self.KEYMAP[code]
+                        value = code[4:]
 
-                    barcode += shifted if self.shift else normal
+                        if len(value) == 1 and value.isalpha():
 
-            elif key.keystate == key.key_up:
+                            barcode += (
+                                value.upper()
+                                if self.shift
+                                else value.lower()
+                            )
 
-                if code in self.SHIFT_KEYS:
-                    self.shift = False
+                            continue
+
+                    # Symbols
+                    if code in self.KEYMAP:
+
+                        normal, shifted = self.KEYMAP[code]
+
+                        barcode += shifted if self.shift else normal
+
+                elif key.keystate == key.key_up:
+
+                    if code in self.SHIFT_KEYS:
+                        self.shift = False
+        except Exception:
+            logger.exception("An error occurred while reading from the scanner.")
+            raise
