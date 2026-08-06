@@ -22,7 +22,7 @@ def save_image(barcode, frame):
         upload_to_sharepoint(filename)
 
     else:
-        logger.info(f"Failed to save image: {filename}")
+        logger.error(f"Failed to save image: {filename}")
 
 def upload_to_sharepoint(filename):
 

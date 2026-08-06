@@ -11,7 +11,7 @@ class Camera:
         self.cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
 
         if not self.cap.isOpened():
-            logger.info("Failed to open camera")
+            logger.error("Failed to open camera")
             raise RuntimeError("Cannot open camera")
 
         self.frame = None
@@ -26,7 +26,7 @@ class Camera:
             try:
                 ok, frame = self.cap.read()
             except:
-                logger.error("Error reading frame from camera")
+                logger.warning("Error reading frame from camera")
                 pass
             if ok:
                 with self.lock:
