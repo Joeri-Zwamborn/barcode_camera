@@ -1,5 +1,9 @@
 import cv2
 import threading
+import logging
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class Camera:
 
@@ -8,6 +12,7 @@ class Camera:
         self.cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
 
         if not self.cap.isOpened():
+            logger.info("Failed to open camera")
             raise RuntimeError("Cannot open camera")
 
         self.frame = None
@@ -19,9 +24,11 @@ class Camera:
     def _loop(self):
 
         while self.running:
-
-            ok, frame = self.cap.read()
-
+            try:
+                ok, frame = self.cap.read()
+            except:
+                logger.error("Error reading frame from camera")
+                pass
             if ok:
                 with self.lock:
                     self.frame = frame.copy()

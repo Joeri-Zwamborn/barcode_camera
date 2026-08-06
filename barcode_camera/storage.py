@@ -1,3 +1,5 @@
+from asyncio.log import logger
+
 import cv2
 import os
 import datetime
@@ -14,19 +16,17 @@ def save_image(barcode, frame):
     )
 
     if cv2.imwrite(filename, frame):
-        print("Saved:", filename)
-
+        logger.info(f"Saved image: {filename}")
         # Placeholder
         upload_to_sharepoint(filename)
 
     else:
-        print("Save failed")
-
+        logger.info(f"Failed to save image: {filename}")
 
 def upload_to_sharepoint(filename):
 
     # TODO:
-    # Upload using Microsoft Graph
-    # or Office365-REST-Python-Client
+    # Upload using 
+    # Office365-REST-Python-Client
 
     pass
