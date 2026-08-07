@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 
 
 logger.info("Starting barcode scanning.")
-print("Ready to scan barcodes. Please scan a barcode to capture an image.")
 
 def main():
     try:
