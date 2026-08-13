@@ -33,7 +33,7 @@ fi
 
 echo "Installing Python packages..."
 
-source "$VENV_DIR/bin/activate"
+source "$APP_DIR/bin/activate"
 
 pip install --upgrade pip
 
