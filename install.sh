@@ -20,6 +20,7 @@ sudo apt install -y \
     python3-evdev \
     python3-requests \
     python3-msal \
+    python3-yaml \
     git
 
 CONFIG_FILE="$APP_DIR/config.yaml"
@@ -30,18 +31,6 @@ if [ ! -f "$CONFIG_FILE" ]; then
     cp "$CONFIG_EXAMPLE" "$CONFIG_FILE"
     echo "Edit $CONFIG_FILE with this Pi's camera, scanner, and storage settings."
 fi
-
-echo "Installing Python packages..."
-
-source "$APP_DIR/bin/activate"
-
-pip install --upgrade pip
-
-if [ -f requirements.txt ]; then
-    pip install -r requirements.txt
-fi
-
-deactivate
 
 echo "Creating image directory..."
 
