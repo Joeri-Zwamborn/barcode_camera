@@ -15,7 +15,6 @@ sudo apt update
 echo "Installing system packages..."
 sudo apt install -y \
     python3 \
-    python3-pip \
     python3-opencv \
     python3-evdev \
     python3-requests \
