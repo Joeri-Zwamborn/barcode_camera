@@ -1,6 +1,8 @@
 import cv2
 import threading
 import logging
+import os
+import time
 from rate_limit import PerSecondRateLimit
 
 logger = logging.getLogger(__name__)
@@ -18,11 +20,29 @@ class Camera:
             raise RuntimeError("Cannot open camera")
 
         self.frame = None
+        self.preview_available = False
+        self.netx_preview_check = 0.0
         self.lock = threading.Lock()
         self.running = True
 
         threading.Thread(target=self._loop, daemon=True).start()
 
+    def _display_is_available(self):
+        if os.environ.get("DISPLAY") is None:
+            return False
+        if time.time() - self.netx_preview_check < 5.0:
+            return self.preview_available
+        self.netx_preview_check = time.time()
+        try:
+            cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
+            cv2.waitKey(1)
+            cv2.destroyAllWindows()
+            self.preview_available = True
+        except cv2.error:
+            logger.warning("Display not available for preview. Continuing without preview.")
+            self.preview_available = False
+        return self.preview_available
+    
     def _loop(self):
 
         while self.running:
@@ -30,7 +50,8 @@ class Camera:
             if not ok:
                 read_logger.warning("Could not read frame from camera")
                 continue
-            cv2.imshow("Barcode Camera", frame)
+            if self._display_is_available():
+                cv2.imshow("Barcode Camera", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 logger.info("Exiting camera loop due to 'q' key press.")
