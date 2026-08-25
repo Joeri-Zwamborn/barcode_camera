@@ -44,6 +44,11 @@ class Camera:
         if not self.preview_available:
             try:
                 cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty(
+                    "Barcode Camera",
+                    cv2.WND_PROP_FULLSCREEN,
+                    cv2.WINDOW_FULLSCREEN,
+                )
                 cv2.waitKey(1)
                 cv2.destroyAllWindows()
                 self.preview_available = True
