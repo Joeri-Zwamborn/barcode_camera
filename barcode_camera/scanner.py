@@ -44,7 +44,7 @@ class BarcodeScanner:
         "KEY_SPACE": (" ", " "),
     }
 
-    def __init__(self):
+    def __init__(self, stop_event):
         try:
             self.device = InputDevice(SCANNER_DEVICE)
             logger.info("Scanner device initialized: %s", SCANNER_DEVICE)
@@ -52,6 +52,10 @@ class BarcodeScanner:
             logger.exception("Failed to initialize scanner device.")
             raise
         self.shift = False
+        self.stop_event = stop_event
+
+    def close(self):
+        self.device.close()
 
     def __iter__(self):
 
@@ -111,6 +115,12 @@ class BarcodeScanner:
 
                     if code in self.SHIFT_KEYS:
                         self.shift = False
+        except OSError:
+            if self.stop_event.is_set():
+                logger.info("Scanner stopped.")
+                return
+            logger.exception("An error occurred while reading from the scanner.")
+            raise
         except Exception:
             logger.exception("An error occurred while reading from the scanner.")
             raise

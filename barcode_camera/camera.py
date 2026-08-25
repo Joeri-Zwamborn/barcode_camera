@@ -24,6 +24,7 @@ class Camera:
             raise RuntimeError("Cannot open camera")
 
         self.frame = None
+        self.frame_width = 0
         self.preview_available = False
         self.next_preview_check = 0.0
         self.lock = threading.Lock()
@@ -66,6 +67,9 @@ class Camera:
 
     def _handle_mouse_event(self, event, x, y, flags, parameters):
         if event != cv2.EVENT_LBUTTONDOWN:
+            return
+
+        if not self.frame_width:
             return
 
         x_start = self.frame_width - self.QUIT_BUTTON_WIDTH - self.QUIT_BUTTON_MARGIN

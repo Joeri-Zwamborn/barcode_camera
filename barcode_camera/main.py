@@ -20,6 +20,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def close_scanner_when_stopped(stop_event, scanner):
+    stop_event.wait()
+    scanner.close()
+
+
 logger.info("Starting barcode scanning.")
 
 def main():
@@ -28,6 +33,11 @@ def main():
     try:
         camera = Camera(CAMERA_INDEX, stop_event)
         scanner = BarcodeScanner(stop_event)
+        threading.Thread(
+            target=close_scanner_when_stopped,
+            args=(stop_event, scanner),
+            daemon=True,
+        ).start()
         for barcode in scanner:
             if stop_event.is_set():
                 break
