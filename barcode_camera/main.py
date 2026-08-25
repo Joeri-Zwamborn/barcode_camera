@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 logger.info("Starting barcode scanning.")
 
 def main():
+    camera = None
     try:
         camera = Camera(CAMERA_INDEX)
         scanner = BarcodeScanner()
@@ -34,7 +35,8 @@ def main():
         logger.exception("An error occurred while scanning barcodes.")
 
     finally:
-        camera.close()
+        if camera is not None:
+            camera.close()
         logging.info("Camera closed. Exiting program.")
 
 if __name__ == "__main__":

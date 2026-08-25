@@ -21,7 +21,7 @@ class Camera:
 
         self.frame = None
         self.preview_available = False
-        self.netx_preview_check = 0.0
+        self.next_preview_check = 0.0
         self.lock = threading.Lock()
         self.running = True
 
@@ -30,9 +30,9 @@ class Camera:
     def _display_is_available(self):
         if os.environ.get("DISPLAY") is None:
             return False
-        if time.time() - self.netx_preview_check < 5.0:
+        if time.time() - self.next_preview_check < 5.0:
             return self.preview_available
-        self.netx_preview_check = time.time()
+        self.next_preview_check = time.time()
         try:
             cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
             cv2.waitKey(1)
@@ -52,12 +52,11 @@ class Camera:
                 continue
             if self._display_is_available():
                 cv2.imshow("Barcode Camera", frame)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                logger.info("Exiting camera loop due to 'q' key press.")
-                cv2.destroyAllWindows()
-                self.running = False
-                break
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    logger.info("Exiting camera loop due to 'q' key press.")
+                    cv2.destroyAllWindows()
+                    self.running = False
+                    break
             with self.lock:
                 self.frame = frame.copy()
 
