@@ -28,21 +28,24 @@ class Camera:
         threading.Thread(target=self._loop, daemon=True).start()
 
     def _display_is_available(self):
-        if os.environ.get("DISPLAY") is None:
+        if not os.path.exists("/tmp/.X11-unix/X0"):
             return False
+        os.environ["DISPLAY"] = ":0"
+        os.environ["XAUTHORITY"] = "/home/admin/.Xauthority"
         if time.time() - self.next_preview_check < 5.0:
             return self.preview_available
         self.next_preview_check = time.time()
-        try:
-            cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
-            cv2.waitKey(1)
-            cv2.destroyAllWindows()
-            self.preview_available = True
-        except cv2.error:
-            logger.warning("Display not available for preview. Continuing without preview.")
-            self.preview_available = False
-        return self.preview_available
-    
+        if not self.preview_available:
+            try:
+                cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
+                cv2.waitKey(1)
+                cv2.destroyAllWindows()
+                self.preview_available = True
+            except cv2.error:
+                logger.warning("Display not available for preview. Continuing without preview.")
+                self.preview_available = False
+            return self.preview_available
+        
     def _loop(self):
 
         while self.running:
