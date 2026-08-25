@@ -11,8 +11,8 @@ read_logger.addFilter(PerSecondRateLimit(max_messages=1))
 
 class Camera:
     WINDOW_NAME = "Barcode Camera"
-    QUIT_BUTTON_WIDTH = 180
-    QUIT_BUTTON_HEIGHT = 60
+    QUIT_BUTTON_WIDTH = 20
+    QUIT_BUTTON_HEIGHT = 20
     QUIT_BUTTON_MARGIN = 20
 
     def __init__(self, index, stop_event):
@@ -87,13 +87,13 @@ class Camera:
         x_end = x_start + self.QUIT_BUTTON_WIDTH
         y_end = y_start + self.QUIT_BUTTON_HEIGHT
 
-        cv2.rectangle(frame, (x_start, y_start), (x_end, y_end), (0, 0, 255), -1)
+        cv2.rectangle(frame, (x_start, y_start), (x_end, y_end), (240, 240, 255), -1)
         cv2.putText(
             frame,
-            "QUIT",
-            (x_start + 45, y_start + 40),
+            "",
+            (x_start + 10, y_start + 30),
             cv2.FONT_HERSHEY_SIMPLEX,
-            1,
+            0.5,
             (255, 255, 255),
             2,
             cv2.LINE_AA,
