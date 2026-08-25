@@ -3,6 +3,7 @@ from scanner import BarcodeScanner
 from storage import save_image
 from config import CAMERA_INDEX
 import logging
+import threading
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
@@ -23,10 +24,13 @@ logger.info("Starting barcode scanning.")
 
 def main():
     camera = None
+    stop_event = threading.Event()
     try:
-        camera = Camera(CAMERA_INDEX)
-        scanner = BarcodeScanner()
+        camera = Camera(CAMERA_INDEX, stop_event)
+        scanner = BarcodeScanner(stop_event)
         for barcode in scanner:
+            if stop_event.is_set():
+                break
             frame = camera.get_frame()
             if frame is None:
                 continue

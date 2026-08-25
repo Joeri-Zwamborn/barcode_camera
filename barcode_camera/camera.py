@@ -10,8 +10,12 @@ read_logger = logging.getLogger(f"{__name__}.frame_read")
 read_logger.addFilter(PerSecondRateLimit(max_messages=1))
 
 class Camera:
+    WINDOW_NAME = "Barcode Camera"
+    QUIT_BUTTON_WIDTH = 180
+    QUIT_BUTTON_HEIGHT = 60
+    QUIT_BUTTON_MARGIN = 20
 
-    def __init__(self, index):
+    def __init__(self, index, stop_event):
 
         self.cap = cv2.VideoCapture(index, cv2.CAP_V4L2)
 
@@ -23,6 +27,7 @@ class Camera:
         self.preview_available = False
         self.next_preview_check = 0.0
         self.lock = threading.Lock()
+        self.stop_event = stop_event
         self.running = True
 
         threading.Thread(target=self._loop, daemon=True).start()
@@ -36,16 +41,21 @@ class Camera:
         if self.preview_available:
             return True
         
-        if time.time() - self.next_preview_check < 5.0:
+        if time.monotonic() - self.next_preview_check < 5.0:
             return self.preview_available
         
-        self.next_preview_check = time.time()
+        self.next_preview_check = time.monotonic()
 
         if not self.preview_available:
             try:
-                cv2.namedWindow("Barcode Camera", cv2.WINDOW_NORMAL)
+                cv2.namedWindow(self.WINDOW_NAME, cv2.WINDOW_NORMAL)
+                cv2.setWindowProperty(
+                    self.WINDOW_NAME,
+                    cv2.WND_PROP_FULLSCREEN,
+                    cv2.WINDOW_FULLSCREEN,
+                )
+                cv2.setMouseCallback(self.WINDOW_NAME, self._handle_mouse_event)
                 cv2.waitKey(1)
-                cv2.destroyAllWindows()
                 self.preview_available = True
 
             except cv2.error:
@@ -53,6 +63,37 @@ class Camera:
                 self.preview_available = False
 
             return self.preview_available
+
+    def _handle_mouse_event(self, event, x, y, flags, parameters):
+        if event != cv2.EVENT_LBUTTONDOWN:
+            return
+
+        x_start = self.frame_width - self.QUIT_BUTTON_WIDTH - self.QUIT_BUTTON_MARGIN
+        y_start = self.QUIT_BUTTON_MARGIN
+
+        if x_start <= x <= x_start + self.QUIT_BUTTON_WIDTH and y_start <= y <= y_start + self.QUIT_BUTTON_HEIGHT:
+            logger.info("Quit button clicked.")
+            self.stop_event.set()
+            self.running = False
+
+    def _draw_quit_button(self, frame):
+        self.frame_width = frame.shape[1]
+        x_start = self.frame_width - self.QUIT_BUTTON_WIDTH - self.QUIT_BUTTON_MARGIN
+        y_start = self.QUIT_BUTTON_MARGIN
+        x_end = x_start + self.QUIT_BUTTON_WIDTH
+        y_end = y_start + self.QUIT_BUTTON_HEIGHT
+
+        cv2.rectangle(frame, (x_start, y_start), (x_end, y_end), (0, 0, 255), -1)
+        cv2.putText(
+            frame,
+            "QUIT",
+            (x_start + 45, y_start + 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            1,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
         
     def _loop(self):
 
@@ -64,10 +105,12 @@ class Camera:
                 continue
 
             if self._display_is_available():
-                cv2.imshow("Barcode Camera", frame)
+                preview_frame = frame.copy()
+                self._draw_quit_button(preview_frame)
+                cv2.imshow(self.WINDOW_NAME, preview_frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     logger.info("Exiting camera loop due to 'q' key press.")
-                    cv2.destroyAllWindows()
+                    self.stop_event.set()
                     self.running = False
                     break
             with self.lock:
@@ -86,4 +129,5 @@ class Camera:
 
         self.running = False
         self.cap.release()
-        cv2.destroyAllWindows()
+        if self.preview_available:
+            cv2.destroyAllWindows()
