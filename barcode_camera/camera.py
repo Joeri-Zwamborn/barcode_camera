@@ -3,6 +3,7 @@ import threading
 import logging
 import os
 import time
+from barcode_camera.storage import save_image
 from rate_limit import PerSecondRateLimit
 
 logger = logging.getLogger(__name__)
@@ -69,15 +70,35 @@ class Camera:
                 read_logger.warning("Could not read frame from camera")
                 continue
 
-            if self._display_is_available():
-                cv2.imshow(self.WINDOW_NAME, frame)
-                if cv2.waitKey(1) & 0xFF == ord("`"):
-                    logger.info("Exiting camera loop due to backtick key press.")
-                    self.stop_event.set()
-                    self.running = False
-                    break
             with self.lock:
                 self.frame = frame.copy()
+
+    def scan_loop(camera, scanner, stop_event):
+        try:
+            for barcode in scanner:
+                if stop_event.is_set():
+                    break
+                frame = camera.get_frame()
+                if frame is None:
+                    save_image(barcode, frame)
+                    continue
+                    
+        except Exception:
+            logger.exception("Scanner loop failed")
+            stop_event.set()
+
+    def run_preview(self):
+        while not self.stop_event.is_set():
+            if self._display_is_available():
+                frame = self.get_frame()
+                with self.lock:
+                    if frame is not None:
+                        cv2.imshow(self.WINDOW_NAME, frame)
+                        if cv2.waitKey(1) & 0xFF == ord('`'):
+                            logger.info("Stop event set. Exiting preview loop.")
+                            self.stop_event.set()
+            else:
+                time.sleep(0.01)
 
     def get_frame(self):
 

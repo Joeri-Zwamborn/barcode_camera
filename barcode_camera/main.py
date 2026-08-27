@@ -28,6 +28,13 @@ def main():
     try:
         camera = Camera(CAMERA_INDEX, stop_event)
         scanner = BarcodeScanner(stop_event)
+
+        scanner_thread = threading.Thread(target=scan_loop, args=(camera, scanner, stop_event), daemon=True)
+        scanner_thread.start()
+
+        camera.run_preview()
+        scanner_thread.join()
+        
         for barcode in scanner:
             if stop_event.is_set():
                 break
