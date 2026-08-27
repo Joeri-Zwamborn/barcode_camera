@@ -29,19 +29,12 @@ def main():
         camera = Camera(CAMERA_INDEX, stop_event)
         scanner = BarcodeScanner(stop_event)
 
-        scanner_thread = threading.Thread(target=scan_loop, args=(camera, scanner, stop_event), daemon=True)
+        scanner_thread = threading.Thread(target=camera.scan_loop, args=(camera, scanner, stop_event), daemon=True)
         scanner_thread.start()
 
         camera.run_preview()
         scanner_thread.join()
-        
-        for barcode in scanner:
-            if stop_event.is_set():
-                break
-            frame = camera.get_frame()
-            if frame is None:
-                continue
-            save_image(barcode, frame)
+
     except Exception:
         logger.exception("An error occurred while scanning barcodes.")
 

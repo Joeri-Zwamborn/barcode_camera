@@ -2,7 +2,7 @@ import logging
 import cv2
 import os
 import datetime
-from config import Sharepoint_Enabled
+from config import SHAREPOINT_ENABLED
 
 from config import LOCAL_SAVE_DIR
 

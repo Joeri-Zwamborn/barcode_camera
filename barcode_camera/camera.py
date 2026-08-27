@@ -73,13 +73,13 @@ class Camera:
             with self.lock:
                 self.frame = frame.copy()
 
-    def scan_loop(camera, scanner, stop_event):
+    def scan_loop(self, camera, scanner, stop_event):
         try:
             for barcode in scanner:
                 if stop_event.is_set():
                     break
                 frame = camera.get_frame()
-                if frame is None:
+                if frame is not None:
                     save_image(barcode, frame)
                     continue
                     
