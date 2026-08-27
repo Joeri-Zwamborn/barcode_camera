@@ -2,6 +2,7 @@ import logging
 import cv2
 import os
 import datetime
+from config import Sharepoint_Enabled
 
 from config import LOCAL_SAVE_DIR
 
@@ -19,7 +20,13 @@ def save_image(barcode, frame):
     if cv2.imwrite(filename, frame):
         logger.info("Saved image: %s", filename)
         # Placeholder
-        upload_to_sharepoint(filename)
+        if Sharepoint_Enabled:
+            try:
+                upload_to_sharepoint(filename)
+                logger.info("Uploaded image to Sharepoint: %s", filename)
+            except Exception as e:
+                logger.error("Failed to upload image to Sharepoint: %s", e)
+
 
     else:
         logger.error("Failed to save image: %s", filename)

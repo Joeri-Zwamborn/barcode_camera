@@ -9,7 +9,7 @@ Designed for manufacturing, warehouse, and quality-control environments, the sys
 ### Features
 
 - Automatic image capture on barcode scan  
--  Continuous camera feed for minimal capture latency
+- Continuous camera feed for minimal capture latency
 - Automatic filename generation using scanned barcode  
 - Runs as a background systemd service  
 - Modular Python architecture  
