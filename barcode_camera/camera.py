@@ -3,7 +3,6 @@ import threading
 import logging
 import os
 import time
-from barcode_camera.storage import save_image
 from rate_limit import PerSecondRateLimit
 
 logger = logging.getLogger(__name__)
@@ -72,20 +71,6 @@ class Camera:
 
             with self.lock:
                 self.frame = frame.copy()
-
-    def scan_loop(self, camera, scanner, stop_event):
-        try:
-            for barcode in scanner:
-                if stop_event.is_set():
-                    break
-                frame = camera.get_frame()
-                if frame is not None:
-                    save_image(barcode, frame)
-                    continue
-                    
-        except Exception:
-            logger.exception("Scanner loop failed")
-            stop_event.set()
 
     def run_preview(self):
         while not self.stop_event.is_set():

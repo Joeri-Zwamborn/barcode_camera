@@ -20,7 +20,7 @@ def save_image(barcode, frame):
     if cv2.imwrite(filename, frame):
         logger.info("Saved image: %s", filename)
         # Placeholder
-        if Sharepoint_Enabled:
+        if SHAREPOINT_ENABLED:
             try:
                 upload_to_sharepoint(filename)
                 logger.info("Uploaded image to Sharepoint: %s", filename)
