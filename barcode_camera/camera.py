@@ -11,9 +11,6 @@ read_logger.addFilter(PerSecondRateLimit(max_messages=1))
 
 class Camera:
     WINDOW_NAME = "Barcode Camera"
-    QUIT_BUTTON_WIDTH = 20
-    QUIT_BUTTON_HEIGHT = 20
-    QUIT_BUTTON_MARGIN = 20
 
     def __init__(self, index, stop_event):
 
@@ -24,7 +21,6 @@ class Camera:
             raise RuntimeError("Cannot open camera")
 
         self.frame = None
-        self.frame_width = 0
         self.preview_available = False
         self.next_preview_check = 0.0
         self.lock = threading.Lock()
@@ -55,7 +51,6 @@ class Camera:
                     cv2.WND_PROP_FULLSCREEN,
                     cv2.WINDOW_FULLSCREEN,
                 )
-                cv2.setMouseCallback(self.WINDOW_NAME, self._handle_mouse_event)
                 cv2.waitKey(1)
                 self.preview_available = True
 
@@ -65,40 +60,6 @@ class Camera:
 
             return self.preview_available
 
-    def _handle_mouse_event(self, event, x, y, flags, parameters):
-        if event != cv2.EVENT_LBUTTONDOWN:
-            return
-
-        if not self.frame_width:
-            return
-
-        x_start = self.frame_width - self.QUIT_BUTTON_WIDTH - self.QUIT_BUTTON_MARGIN
-        y_start = self.QUIT_BUTTON_MARGIN
-
-        if x_start <= x <= x_start + self.QUIT_BUTTON_WIDTH and y_start <= y <= y_start + self.QUIT_BUTTON_HEIGHT:
-            logger.info("Quit button clicked.")
-            self.stop_event.set()
-            self.running = False
-
-    def _draw_quit_button(self, frame):
-        self.frame_width = frame.shape[1]
-        x_start = self.frame_width - self.QUIT_BUTTON_WIDTH - self.QUIT_BUTTON_MARGIN
-        y_start = self.QUIT_BUTTON_MARGIN
-        x_end = x_start + self.QUIT_BUTTON_WIDTH
-        y_end = y_start + self.QUIT_BUTTON_HEIGHT
-
-        cv2.rectangle(frame, (x_start, y_start), (x_end, y_end), (240, 240, 255), -1)
-        cv2.putText(
-            frame,
-            "",
-            (x_start + 10, y_start + 30),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (255, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
-        
     def _loop(self):
 
         while self.running:
@@ -109,11 +70,9 @@ class Camera:
                 continue
 
             if self._display_is_available():
-                preview_frame = frame.copy()
-                self._draw_quit_button(preview_frame)
-                cv2.imshow(self.WINDOW_NAME, preview_frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    logger.info("Exiting camera loop due to 'q' key press.")
+                cv2.imshow(self.WINDOW_NAME, frame)
+                if cv2.waitKey(1) & 0xFF == ord("`"):
+                    logger.info("Exiting camera loop due to backtick key press.")
                     self.stop_event.set()
                     self.running = False
                     break
