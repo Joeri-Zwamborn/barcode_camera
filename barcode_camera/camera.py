@@ -63,10 +63,10 @@ class Camera:
     def _loop(self):
 
         while self.running:
-            ok, frame = self.cap.read()
-
-            if not ok:
-                read_logger.warning("Could not read frame from camera")
+            try:
+                ok, frame = self.cap.read()
+            except Exception as e:
+                logger.error(f"Error reading frame from camera: {e}")
                 continue
 
             with self.lock:
