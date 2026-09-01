@@ -10,11 +10,10 @@ scanner:
 storage:
   local_directory: "/home/admin/Production_Photos"
 
-sharepoint:
+azure:
   enabled: false
+  storage_account: ""
+  container: "photos/production"
   tenant_id: ""
   client_id: ""
   client_secret: ""
-  site_id: ""
-  drive_id: ""
-  folder: "Production Photos"
