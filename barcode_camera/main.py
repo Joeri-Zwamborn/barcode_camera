@@ -11,7 +11,7 @@ LOG_FILE_PATH = Path(__file__).resolve().parent.parent / "main.log"
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format="%(asctime)s [%(levelname)s] pid=%(process)d %(name)s: %(message)s",
     handlers=[
         RotatingFileHandler(LOG_FILE_PATH, maxBytes=1024*1024, backupCount=5),
         logging.StreamHandler()
