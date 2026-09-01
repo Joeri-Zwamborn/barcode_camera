@@ -26,6 +26,8 @@ def save_image(barcode, frame):
             try:
                 upload_to_azure(filename)
                 logger.info("Uploaded image to Azure: %s", filename)
+                Path(filename).unlink()
+                logger.info("Removed local image after Azure upload: %s", filename)
             except Exception as e:
                 logger.error("Failed to upload image to Azure: %s", e)
 
