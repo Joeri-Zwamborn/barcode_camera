@@ -18,8 +18,6 @@ sudo apt install -y \
     python3 \
     python3-opencv \
     python3-evdev \
-    python3-requests \
-    python3-msal \
     python3-yaml \
     python3-venv \
     git
@@ -42,9 +40,7 @@ fi
 echo "Installing Azure Python packages..."
 
 "$VENV_DIR/bin/python" -m pip install --upgrade pip
-"$VENV_DIR/bin/python" -m pip install \
-    azure-storage-blob \
-    azure-identity
+"$VENV_DIR/bin/python" -m pip install -r "$APP_DIR/requirements.txt"
 
 echo "Creating image directory..."
 
