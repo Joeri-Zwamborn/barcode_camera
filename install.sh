@@ -22,8 +22,6 @@ sudo apt install -y \
     python3-msal \
     python3-yaml \
     python3-venv \
-    python3-azure-storage-blob \
-    python3-azure-identity \
     git
 
 CONFIG_FILE="$APP_DIR/config.yaml"
