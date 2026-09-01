@@ -4,6 +4,7 @@ set -e
 
 APP_NAME="barcode_camera"
 APP_DIR="$(cd "$(dirname "$0")" && pwd)"
+VENV_DIR="$APP_DIR/venv"
 
 echo "======================================"
 echo "Installing Barcode Camera"
@@ -20,6 +21,9 @@ sudo apt install -y \
     python3-requests \
     python3-msal \
     python3-yaml \
+    python3-venv \
+    python3-azure-storage-blob \
+    python3-azure-identity \
     git
 
 CONFIG_FILE="$APP_DIR/config.yaml"
@@ -30,6 +34,19 @@ if [ ! -f "$CONFIG_FILE" ]; then
     cp "$CONFIG_EXAMPLE" "$CONFIG_FILE"
     echo "Edit $CONFIG_FILE with this Pi's camera, scanner, and storage settings."
 fi
+
+echo "Creating Python virtual environment..."
+
+if [ ! -d "$VENV_DIR" ]; then
+    python3 -m venv --system-site-packages "$VENV_DIR"
+fi
+
+echo "Installing Azure Python packages..."
+
+"$VENV_DIR/bin/python" -m pip install --upgrade pip
+"$VENV_DIR/bin/python" -m pip install \
+    azure-storage-blob \
+    azure-identity
 
 echo "Creating image directory..."
 

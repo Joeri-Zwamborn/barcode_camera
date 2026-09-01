@@ -10,4 +10,5 @@ CAMERA_INDEX = config["camera"]["index"]
 SCANNER_DEVICE = config["scanner"]["device"]
 LOCAL_SAVE_DIR = config["storage"]["local_directory"]
 
-SHAREPOINT_ENABLED = config["sharepoint"]["enabled"]
+AZURE_ENABLED = config["azure"]["enabled"]
+AZURE = config["azure"]
