@@ -17,3 +17,8 @@ azure:
   tenant_id: ""
   client_id: ""
   client_secret: ""
+
+heartbeat:
+  enabled: false
+  table: "deviceheartbeats"
+  interval_seconds: 60

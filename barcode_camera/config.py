@@ -12,3 +12,10 @@ LOCAL_SAVE_DIR = config["storage"]["local_directory"]
 
 AZURE_ENABLED = config["azure"]["enabled"]
 AZURE = config["azure"]
+
+STATION_NAME = config["station"]["name"]
+HEARTBEAT = {
+    "enabled": False,
+    "table": "deviceheartbeats",
+    "interval_seconds": 60,
+} | config.get("heartbeat", {})
