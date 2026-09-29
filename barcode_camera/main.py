@@ -1,6 +1,5 @@
 import threading
 from camera import Camera
-from heartbeat import HeartbeatReporter
 from scanner import BarcodeScanner
 from storage import save_image
 from config import CAMERA_INDEX
@@ -23,37 +22,31 @@ logger = logging.getLogger(__name__)
 
 logger.info("Starting barcode scanning.")
 
-def scan_loop(camera, scanner, heartbeat, stop_event):
+def scan_loop(camera, scanner, stop_event):
         try:
             for barcode in scanner:
                 if stop_event.is_set():
                     break
-                heartbeat.record_barcode(barcode)
                 frame = camera.get_frame()
                 if frame is not None:
                     if save_image(barcode, frame):
-                        heartbeat.record_upload()
+                        pass
                     continue
                     
         except Exception:
             logger.exception("Scanner loop failed")
-            heartbeat.set_scanner_status("offline")
             stop_event.set()
 
 def main():
     camera = None
-    heartbeat = HeartbeatReporter()
     stop_event = threading.Event()
     try:
-        heartbeat.start()
         camera = Camera(CAMERA_INDEX, stop_event)
-        heartbeat.set_camera_status("online")
         scanner = BarcodeScanner(stop_event)
-        heartbeat.set_scanner_status("online")
 
         scanner_thread = threading.Thread(
             target=scan_loop,
-            args=(camera, scanner, heartbeat, stop_event),
+            args=(camera, scanner, stop_event),
             daemon=True,
         )
         scanner_thread.start()
@@ -67,7 +60,6 @@ def main():
     finally:
         if camera is not None:
             camera.close()
-        heartbeat.stop()
         logging.info("Camera closed. Exiting program.")
 
 if __name__ == "__main__":
