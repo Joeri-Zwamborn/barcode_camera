@@ -1,7 +1,7 @@
 import logging
-import socket
 import threading
 from datetime import datetime, timezone
+from pathlib import Path
 
 from azure.data.tables import TableServiceClient, UpdateMode
 from azure.identity import ClientSecretCredential
@@ -10,6 +10,9 @@ from config import AZURE, HEARTBEAT, STATION_NAME
 
 
 logger = logging.getLogger(__name__)
+SOFTWARE_VERSION = (Path(__file__).resolve().parent.parent / "VERSION").read_text(
+    encoding="utf-8"
+).strip()
 
 
 class HeartbeatReporter:
@@ -19,6 +22,11 @@ class HeartbeatReporter:
         self.stop_event = threading.Event()
         self.thread = None
         self.table_client = None
+        self.lock = threading.Lock()
+        self.camera_status = "offline"
+        self.scanner_status = "offline"
+        self.last_barcode = ""
+        self.last_upload = ""
 
     def start(self):
         if not self.enabled:
@@ -32,12 +40,31 @@ class HeartbeatReporter:
             return
 
         self.stop_event.set()
-        self.thread.join()
-        self._upload_status("offline")
+        if self.thread is not None:
+            self.thread.join()
+        self.set_camera_status("offline")
+        self.set_scanner_status("offline")
+        self._upload_heartbeat()
+
+    def set_camera_status(self, status):
+        with self.lock:
+            self.camera_status = status
+
+    def set_scanner_status(self, status):
+        with self.lock:
+            self.scanner_status = status
+
+    def record_barcode(self, barcode):
+        with self.lock:
+            self.last_barcode = barcode
+
+    def record_upload(self):
+        with self.lock:
+            self.last_upload = datetime.now(timezone.utc).isoformat()
 
     def _run(self):
         while not self.stop_event.is_set():
-            self._upload_status("online")
+            self._upload_heartbeat()
             self.stop_event.wait(self.interval_seconds)
 
     def _get_table_client(self):
@@ -57,18 +84,23 @@ class HeartbeatReporter:
         self.table_client = service.get_table_client(HEARTBEAT["table"])
         return self.table_client
 
-    def _upload_status(self, status):
+    def _upload_heartbeat(self):
         try:
+            with self.lock:
+                entity = {
+                    "PartitionKey": STATION_NAME,
+                    "RowKey": "current",
+                    "LastSeen": datetime.now(timezone.utc).isoformat(),
+                    "CameraStatus": self.camera_status,
+                    "ScannerStatus": self.scanner_status,
+                    "LastBarcode": self.last_barcode,
+                    "LastUpload": self.last_upload,
+                    "SoftwareVersion": SOFTWARE_VERSION,
+                }
             self._get_table_client().upsert_entity(
-                entity={
-                    "PartitionKey": "barcode_camera",
-                    "RowKey": STATION_NAME,
-                    "status": status,
-                    "last_seen_at": datetime.now(timezone.utc).isoformat(),
-                    "hostname": socket.gethostname(),
-                },
+                entity=entity,
                 mode=UpdateMode.REPLACE,
             )
-            logger.info("Heartbeat uploaded: station=%s status=%s", STATION_NAME, status)
+            logger.info("Heartbeat uploaded: station=%s", STATION_NAME)
         except Exception:
             logger.exception("Failed to upload heartbeat")

@@ -26,14 +26,21 @@ def save_image(barcode, frame):
             try:
                 upload_to_azure(filename)
                 logger.info("Uploaded image to Azure: %s", filename)
-                Path(filename).unlink()
-                logger.info("Removed local image after Azure upload: %s", filename)
+                try:
+                    Path(filename).unlink()
+                    logger.info("Removed local image after Azure upload: %s", filename)
+                except OSError:
+                    logger.exception("Failed to remove local image: %s", filename)
+                return True
             except Exception as e:
                 logger.error("Failed to upload image to Azure: %s", e)
+                return False
 
 
     else:
         logger.error("Failed to save image: %s", filename)
+
+    return False
 
 def upload_to_azure(filename):
     credential = ClientSecretCredential(
