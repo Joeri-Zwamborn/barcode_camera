@@ -80,7 +80,6 @@ class HeartbeatReporter:
             endpoint=f"https://{AZURE['storage_account']}.table.core.windows.net",
             credential=credential,
         )
-        service.create_table_if_not_exists(HEARTBEAT["table"])
         self.table_client = service.get_table_client(HEARTBEAT["table"])
         return self.table_client
 
