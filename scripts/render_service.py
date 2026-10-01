@@ -18,7 +18,9 @@ def render_service(directory, user):
     template = (directory / 'barcode_camera.service.in').read_text()
     substitutions = {
         '@SERVICE_USER@': user,
-        '@APP_DIRECTORY@': quote_path(directory),
+        # WorkingDirectory is a single path value, not an ExecStart argument.
+        # Its parser keeps quotes literally, making a quoted path non-absolute.
+        '@APP_DIRECTORY@': str(directory).replace('%', '%%'),
         '@PYTHON_EXECUTABLE@': quote_path(directory / 'venv' / 'bin' / 'python'),
         '@MAIN_SCRIPT@': quote_path(directory / 'barcode_camera' / 'main.py'),
     }

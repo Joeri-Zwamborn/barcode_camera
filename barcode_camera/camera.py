@@ -127,9 +127,9 @@ class Camera:
                 with self.lock:
                     if frame is not None:
                         cv2.imshow(self.WINDOW_NAME, frame)
-                        if cv2.waitKey(1) & 0xFF == ord('`'):
-                            logger.info("Stop event set. Exiting preview loop.")
-                            self.stop_event.set()
+                        # Process preview events without letting keyboard input
+                        # stop the unattended production service.
+                        cv2.waitKey(1)
                 if frame is None:
                     cv2.waitKey(1)
                     self.stop_event.wait(0.05)

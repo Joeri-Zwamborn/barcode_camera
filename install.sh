@@ -63,6 +63,7 @@ SERVICE_FILE="$(mktemp)"
 trap 'rm -f "$SERVICE_FILE"' EXIT
 python3 "$APP_DIR/scripts/render_service.py" "$APP_DIR" "$SERVICE_USER" > "$SERVICE_FILE"
 sudo install -m 0644 "$SERVICE_FILE" "/etc/systemd/system/$APP_NAME.service"
+sudo systemd-analyze verify "/etc/systemd/system/$APP_NAME.service"
 sudo systemctl daemon-reload
 sudo systemctl enable "$APP_NAME.service"
 if [ "$CONFIG_CREATED" = false ]; then

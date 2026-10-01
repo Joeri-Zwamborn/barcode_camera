@@ -156,6 +156,19 @@ SHAREPOINT = {
 }
 ## Running the Application
 
+### Barcode validation
+
+Barcodes must contain 1–128 ASCII characters, start with a letter or digit, and
+use only letters, digits, dots, underscores, or hyphens. Leading zeros and the
+text received from the scanner are preserved. Spaces, slashes, control characters,
+and other punctuation are rejected rather than silently changed. Rejections are
+logged and no photo is saved. Confirm representative production barcodes fit
+these rules before deployment.
+
+Scanner input longer than 128 characters is discarded in full until Enter; the
+next scan starts with a clean buffer. Storage validates again and checks that
+both final and temporary photo paths remain inside the configured image directory.
+
 ### Background uploads and offline recovery
 
 Photos are saved locally before uploading. When Azure is enabled, a background

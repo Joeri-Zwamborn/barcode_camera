@@ -1,5 +1,6 @@
 from evdev import InputDevice, categorize, ecodes
 from config import SCANNER_DEVICE
+from barcodes import MAX_BARCODE_LENGTH, is_valid_barcode
 import logging
 import select
 
@@ -58,6 +59,18 @@ class BarcodeScanner:
     def __iter__(self):
 
         barcode = ""
+        oversized = False
+
+        def append_character(value):
+            nonlocal barcode, oversized
+            if oversized:
+                return
+            if len(barcode) + len(value) > MAX_BARCODE_LENGTH:
+                logger.warning("Barcode rejected: input exceeds maximum length")
+                barcode = ""
+                oversized = True
+            else:
+                barcode += value
         try:
             while not self.stop_event.is_set():
                 ready, _, _ = select.select([self.device.fd], [], [], 0.5)
@@ -81,10 +94,15 @@ class BarcodeScanner:
                             continue
 
                         if code == "KEY_ENTER":
-                            if barcode:
+                            completed = barcode
+                            barcode = ""
+                            rejected_size = oversized
+                            oversized = False
+                            if not rejected_size and is_valid_barcode(completed):
                                 logger.info("Barcode scanned.")
-                                yield barcode
-                                barcode = ""
+                                yield completed
+                            elif completed:
+                                logger.warning("Barcode rejected: invalid characters or format")
 
                             continue
 
@@ -92,12 +110,12 @@ class BarcodeScanner:
                             value = code[4:]
 
                             if len(value) == 1 and value.isalpha():
-                                barcode += value.upper() if self.shift else value.lower()
+                                append_character(value.upper() if self.shift else value.lower())
                                 continue
 
                         if code in self.KEYMAP:
                             normal, shifted = self.KEYMAP[code]
-                            barcode += shifted if self.shift else normal
+                            append_character(shifted if self.shift else normal)
 
                     elif key.keystate == key.key_up and code in self.SHIFT_KEYS:
                         self.shift = False

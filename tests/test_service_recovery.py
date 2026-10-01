@@ -87,6 +87,8 @@ class ServiceRecoveryTests(unittest.TestCase):
         self.assertIn('RestartSec=5', unit)
         self.assertNotIn('@APP_DIRECTORY@', unit)
         self.assertIn(renderer.quote_path(ROOT / 'venv' / 'bin' / 'python'), unit)
+        working_directory = next(line for line in unit.splitlines() if line.startswith('WorkingDirectory='))
+        self.assertEqual(working_directory, 'WorkingDirectory=' + str(ROOT).replace('%', '%%'))
         with self.assertRaises(ValueError):
             renderer.render_service(ROOT, 'root')
 

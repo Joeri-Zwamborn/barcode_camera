@@ -23,9 +23,12 @@ class UploadQueueTests(unittest.TestCase):
             directory.rmdir()
         self.addCleanup(cleanup)
         modules = {}
-        for name in ('cv2', 'config', 'azure', 'azure.core', 'azure.core.exceptions',
+        for name in ('cv2', 'config', 'barcodes', 'azure', 'azure.core', 'azure.core.exceptions',
                      'azure.identity', 'azure.storage', 'azure.storage.blob'):
             modules[name] = types.ModuleType(name)
+        barcode_spec = importlib.util.spec_from_file_location('barcodes',
+            Path(__file__).resolve().parents[1] / 'barcode_camera' / 'barcodes.py')
+        barcode_spec.loader.exec_module(modules['barcodes'])
         modules['config'].LOCAL_SAVE_DIR = self.directory.name
         modules['config'].AZURE_ENABLED = True
         modules['config'].AZURE = {'container': 'photos'}
@@ -90,6 +93,32 @@ class UploadQueueTests(unittest.TestCase):
         self.storage.AZURE_ENABLED = False
         self.assertIsNone(self.storage.start_upload_worker(self.stop))
         self.assertTrue(self.storage.save_image('123', object()))
+
+    def test_invalid_barcodes_never_write_or_encode_a_photo(self):
+        for barcode in ('', '../escape', '/absolute', 'a/b', 'a\\b', '..',
+                        'abc\x00', 'abc\n', 'a b', 'a:b', 'a*', 'é123',
+                        'a' * 129, None, 123):
+            with self.subTest(barcode=barcode):
+                self.assertFalse(self.storage.save_image(barcode, object()))
+        self.storage.cv2.imencode.assert_not_called()
+        self.assertEqual(list(Path(self.directory.name).iterdir()), [])
+
+    def test_valid_barcodes_preserve_searchable_text(self):
+        for barcode in ('0123456789', 'AbC-123_4.5', 'a' * 128):
+            self.assertTrue(self.storage.save_image(barcode, object()))
+            self.assertEqual(len(list(Path(self.directory.name).glob(barcode + '_*.png'))), 1)
+
+    def test_resolved_path_outside_directory_is_rejected(self):
+        directory = Path(self.directory.name)
+        original = Path.resolve
+        def resolve(path, *args, **kwargs):
+            if path.suffix == '.png':
+                return directory.parent / 'outside.png'
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'resolve', resolve):
+            self.assertFalse(self.storage.save_image('123', object()))
+        self.storage.cv2.imencode.assert_not_called()
+        self.assertEqual(list(directory.iterdir()), [])
 
 
 if __name__ == '__main__':

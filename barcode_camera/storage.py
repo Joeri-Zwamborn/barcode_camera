@@ -12,6 +12,7 @@ from azure.core.exceptions import ResourceExistsError
 from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobServiceClient
 from config import AZURE_ENABLED, LOCAL_SAVE_DIR, AZURE
+from barcodes import is_valid_barcode
 
 logger = logging.getLogger(__name__)
 RETRY_SECONDS = 30
@@ -19,10 +20,10 @@ RETRY_SECONDS = 30
 
 def save_image(barcode, frame):
     """Return success once the photo is safely saved, without waiting for Azure."""
-    if not barcode or any(char in barcode for char in ("/", "\\", "\x00")):
-        logger.error("Barcode contains invalid filename characters")
+    if not is_valid_barcode(barcode):
+        logger.error("Barcode rejected: use 1–128 ASCII letters/digits, dots, underscores or hyphens, starting with a letter/digit")
         return False
-    directory = Path(LOCAL_SAVE_DIR)
+    directory = Path(LOCAL_SAVE_DIR).resolve()
     now = datetime.datetime.now()
     timestamp = str(now).replace(":", "-") if os.name == "nt" else str(now)
     # Unique names also prevent two stations from overwriting the same capture.
@@ -30,6 +31,8 @@ def save_image(barcode, frame):
     temporary = filename.with_suffix(".pending")
     try:
         directory.mkdir(parents=True, exist_ok=True)
+        if filename.resolve().parent != directory or temporary.resolve().parent != directory:
+            raise ValueError("Photo path is outside the configured image directory")
         success, encoded = cv2.imencode(".png", frame)
         if not success:
             raise RuntimeError("Failed to encode camera image")
