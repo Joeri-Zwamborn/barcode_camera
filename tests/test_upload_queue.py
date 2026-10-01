@@ -64,6 +64,7 @@ class UploadQueueTests(unittest.TestCase):
         self.assertFalse(photo.exists())
 
     def test_existing_blob_is_verified_before_local_deletion(self):
+        self.storage.AZURE['blob_prefix'] = 'production'
         photo = Path(self.directory.name) / 'old.png'
         photo.write_bytes(b'photo')
         blob = self.service.get_blob_client.return_value
@@ -74,6 +75,26 @@ class UploadQueueTests(unittest.TestCase):
         blob.download_blob.return_value.chunks.return_value = [b'photo']
         self.storage.upload_pending_once(self.stop, self.service)
         self.assertFalse(photo.exists())
+        self.service.get_blob_client.assert_called_with(container='photos', blob='production/old.png')
+
+    def test_upload_uses_configured_prefix(self):
+        photo = Path(self.directory.name) / 'capture.png'
+        photo.write_bytes(b'photo')
+        for prefix in ('production', '/production/', 'production/station-1'):
+            with self.subTest(prefix=prefix):
+                self.storage.AZURE['blob_prefix'] = prefix
+                self.storage.upload_to_azure(photo, self.service)
+                self.service.get_blob_client.assert_called_with(
+                    container='photos', blob=prefix.strip('/') + '/capture.png')
+
+    def test_missing_or_empty_prefix_keeps_existing_root_uploads(self):
+        photo = Path(self.directory.name) / 'capture.png'
+        photo.write_bytes(b'photo')
+        self.storage.upload_to_azure(photo, self.service)
+        self.service.get_blob_client.assert_called_with(container='photos', blob='capture.png')
+        self.storage.AZURE['blob_prefix'] = ''
+        self.storage.upload_to_azure(photo, self.service)
+        self.service.get_blob_client.assert_called_with(container='photos', blob='capture.png')
 
     def test_partial_file_is_ignored_and_stop_prevents_upload(self):
         (Path(self.directory.name) / 'partial.pending').write_bytes(b'incomplete')

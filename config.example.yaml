@@ -15,7 +15,8 @@ storage:
 azure:
   enabled: false
   storage_account: ""
-  container: "photos/production"
+  container: "photos"
+  blob_prefix: "production"
   tenant_id: ""
   client_id: ""
   client_secret: ""

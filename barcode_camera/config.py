@@ -13,6 +13,10 @@ LOCAL_SAVE_DIR = config["storage"]["local_directory"]
 
 AZURE_ENABLED = config["azure"]["enabled"]
 AZURE = config["azure"]
+if AZURE_ENABLED and "/" in AZURE["container"]:
+    raise ValueError("Azure container must be a container name, e.g. 'photos'; use blob_prefix: 'production' for the folder")
+if not isinstance(AZURE.get("blob_prefix", ""), str):
+    raise ValueError("azure.blob_prefix must be a string")
 
 STATION_NAME = config["station"]["name"]
 HEARTBEAT = {

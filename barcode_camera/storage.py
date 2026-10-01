@@ -61,7 +61,9 @@ def save_image(barcode, frame):
 
 def upload_to_azure(filename, service):
     local_file = Path(filename)
-    blob = service.get_blob_client(container=AZURE["container"], blob=local_file.name)
+    prefix = AZURE.get("blob_prefix", "").strip("/")
+    blob_name = f"{prefix}/{local_file.name}" if prefix else local_file.name
+    blob = service.get_blob_client(container=AZURE["container"], blob=blob_name)
     try:
         with local_file.open("rb") as image_file:
             blob.upload_blob(image_file, overwrite=False)

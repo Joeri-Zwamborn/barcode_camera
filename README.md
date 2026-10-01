@@ -171,6 +171,22 @@ both final and temporary photo paths remain inside the configured image director
 
 ### Background uploads and offline recovery
 
+For photos in the `production/` folder of the `photos` container, set these keys
+under the existing `azure` section in the Pi's `config.yaml`:
+
+```yaml
+  container: "photos"
+  blob_prefix: "production"
+```
+
+Keep the existing Azure account and credential settings. Uploads then use blob
+names such as `production/<capture-filename>.png`. The container name must not
+include a slash. If `blob_prefix` is omitted or empty, uploads go to the container
+root for compatibility with existing configurations. Pending local PNGs use the
+current prefix when retried; existing blobs are not moved. Set the web app's
+`AZURE_STORAGE_CONTAINER_NAME` to `photos`; its current listing and image routes
+already support the prefixed filenames.
+
 Photos are saved locally before uploading. When Azure is enabled, a background
 worker checks the configured local image directory at startup and every 30
 seconds. Scanning does not wait for network requests. Saved `.png` files form the
