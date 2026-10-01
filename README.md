@@ -139,6 +139,38 @@ SHAREPOINT = {
 }
 ## Running the Application
 
+### Background uploads and offline recovery
+
+Photos are saved locally before uploading. When Azure is enabled, a background
+worker checks the configured local image directory at startup and every 30
+seconds. Scanning does not wait for network requests. Saved `.png` files form the
+persistent queue and are retried after connection failures or application restarts.
+All existing `.png` files in that directory are included; use a dedicated directory
+for production captures.
+
+Files are written to `.pending` files first and renamed after the write completes.
+Incomplete `.pending` files are never uploaded. Inspect any left after a crash
+before removing them. Local PNGs are deleted only after a successful upload. If a
+blob already exists, the worker compares its contents with the local file before
+deleting the local copy. A mismatch remains queued and is logged for investigation.
+This verification requires blob read permission as well as upload permission.
+
+New filenames include a unique capture identifier before the existing timestamp;
+barcode searches and the web dashboard's date extraction remain compatible on
+the Raspberry Pi. With Azure disabled, captures remain local and no upload worker
+starts. Monitor available disk space during prolonged outages.
+
+Before deploying to all stations, test one Pi by disconnecting its network,
+scanning several barcodes, restarting the application while offline, and restoring
+the network. Confirm the same saved photos appear in Azure and only successfully
+uploaded files disappear locally.
+
+Queue tests can be run without Pi hardware or Azure credentials:
+
+```sh
+python -m unittest discover -s tests -v
+```
+
 To run manually:
 
 python3 main.py

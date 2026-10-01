@@ -1,7 +1,7 @@
 import threading
 from camera import Camera
 from scanner import BarcodeScanner
-from storage import save_image
+from storage import save_image, start_upload_worker
 from config import CAMERA_INDEX
 import logging
 from logging.handlers import RotatingFileHandler
@@ -29,8 +29,8 @@ def scan_loop(camera, scanner, stop_event):
                     break
                 frame = camera.get_frame()
                 if frame is not None:
-                    if save_image(barcode, frame):
-                        pass
+                    if not save_image(barcode, frame):
+                        logger.error("Photo could not be saved for scanned barcode")
                     continue
                     
         except Exception:
@@ -39,10 +39,12 @@ def scan_loop(camera, scanner, stop_event):
 
 def main():
     camera = None
+    upload_worker = None
     stop_event = threading.Event()
     try:
         camera = Camera(CAMERA_INDEX, stop_event)
         scanner = BarcodeScanner(stop_event)
+        upload_worker = start_upload_worker(stop_event)
 
         scanner_thread = threading.Thread(
             target=scan_loop,
@@ -58,6 +60,9 @@ def main():
         logger.exception("An error occurred while scanning barcodes.")
 
     finally:
+        stop_event.set()
+        if upload_worker is not None:
+            upload_worker.join(timeout=5)
         if camera is not None:
             camera.close()
         logging.info("Camera closed. Exiting program.")
