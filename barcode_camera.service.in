@@ -1,0 +1,22 @@
+[Unit]
+Description=Barcode Camera capture and upload service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=@SERVICE_USER@
+SupplementaryGroups=video input
+WorkingDirectory=@APP_DIRECTORY@
+ExecStart=@PYTHON_EXECUTABLE@ -u @MAIN_SCRIPT@
+Environment=PYTHONUNBUFFERED=1
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=15
+KillSignal=SIGTERM
+UMask=0077
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

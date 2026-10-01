@@ -48,7 +48,7 @@ barcode_camera/
 │  
 ├── requirements.txt  
 ├── install.sh  
-├── barcode_camera.service  
+├── barcode_camera.service.in # Service template rendered by the installer
 │  
 └── README.md  
 
@@ -74,7 +74,24 @@ The installer will:
 - Install Python dependencies
 - Install the systemd service
 - Enable automatic startup
-- Start the application
+- Start the application when an existing configuration is present
+
+Run the installer as the normal Pi account (for example `admin`), without putting
+`sudo` before `./install.sh`. It uses sudo for system changes and configures the
+service to run as that account, with access to the `video` and `input` groups.
+The checkout and virtual environment must be owned by that account.
+
+On a first installation, edit the newly created `config.yaml` before starting:
+
+```sh
+sudo systemctl start barcode_camera.service
+```
+
+The service template is rendered with the actual checkout path and installed as
+`/etc/systemd/system/barcode_camera.service`. Re-running the installer stops the
+existing service before updating dependencies, then installs and restarts it.
+If installation fails after stopping it, fix the reported error and rerun the
+installer; the service remains stopped during the failed update.
 
 ## Wiring
 
@@ -178,6 +195,17 @@ python3 main.py
 Normally the application is started automatically by systemd.
 
 #### Service Management
+
+Startup errors, scanner failures, unexpected scanner termination, and unexpected
+camera capture-thread errors produce a nonzero exit status. Systemd retries after
+five seconds, including while a disconnected scanner is unavailable. Normal
+SIGTERM/SIGINT shutdown returns success; `systemctl stop` leaves the service stopped.
+Upload outages and recoverable camera read failures use their own retry loops.
+
+After deploying, unplug the scanner and check the journal for a failure followed
+by restart attempts. Reconnect it and confirm scanning resumes. Reboot the Pi to
+verify automatic startup, then confirm `systemctl stop` leaves it stopped.
+This restart policy does not detect a camera driver stuck inside a blocking read.
 
 Check status:
 

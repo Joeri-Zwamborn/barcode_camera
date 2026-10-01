@@ -25,6 +25,7 @@ class Camera:
         self.next_preview_check = 0.0
         self.lock = threading.Lock()
         self.stop_event = stop_event
+        self.failure_event = threading.Event()
         self.running = True
 
         self.capture_thread = threading.Thread(target=self._loop, daemon=True)
@@ -101,6 +102,10 @@ class Camera:
                     self.frame = frame.copy()
                     self.frame_received_at = time.monotonic()
                 failures = 0
+        except Exception:
+            logger.exception("Camera capture thread failed")
+            self.failure_event.set()
+            self.stop_event.set()
         finally:
             self._invalidate_frame()
             self._release_capture()

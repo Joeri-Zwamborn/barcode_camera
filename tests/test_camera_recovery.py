@@ -104,6 +104,18 @@ class CameraRecoveryTests(unittest.TestCase):
             self.camera._loop()
         capture.release.assert_called_once()
 
+    def test_unexpected_capture_thread_error_signals_application_failure(self):
+        capture = Mock()
+        capture.isOpened.return_value = True
+        frame = Mock()
+        frame.copy.side_effect = RuntimeError('Unexpected frame failure')
+        capture.read.return_value = (True, frame)
+        self.module.cv2.VideoCapture.return_value = capture
+        self.camera._loop()
+        self.assertTrue(self.camera.failure_event.is_set())
+        self.assertTrue(self.stop.is_set())
+        capture.release.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()
