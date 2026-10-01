@@ -225,6 +225,37 @@ The installer updates the service without requiring manual configuration.
 
 ## Troubleshooting
 
+### Camera disconnects and stale frames
+
+Captures only use frames received within the last second. A failed frame read
+immediately clears the cached image, so subsequent barcodes cannot reuse that
+image. Scans without a fresh frame are rejected and logged; rescan the item after
+the camera recovers. These scans are not queued for later capture because the
+original item may no longer be in front of the camera.
+
+After five consecutive read failures, the camera connection is reopened every
+two seconds until it recovers. The same retry applies if the camera is unavailable
+at startup. Prefer a stable device path in `config.yaml`, since video device
+numbers may change after reconnecting. Use your camera's capture-device link from
+`ls -l /dev/v4l/by-id/`. For the tested C270, for example:
+
+```yaml
+camera:
+  device: "/dev/v4l/by-id/usb-046d_C270_HD_WEBCAM_200901010001-video-index0"
+```
+
+The optional `device` setting takes precedence over `index`; existing numeric
+index configurations continue to work. Use the path reported by your own Pi.
+
+Test on one Pi by unplugging the camera, scanning a barcode, reconnecting the
+camera, and rescanning with a different item visible. Confirm no photo is saved
+while disconnected and the next photo shows the new item. Also start the app
+without the camera connected and confirm plugging it in restores capture.
+
+If the driver blocks inside a frame read, the freshness check still rejects old
+frames, but automatic reopening must wait for the driver call to return. Such a
+hang may require restarting the application or device.
+
 ### Camera not detected
 
 Check:

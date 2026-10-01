@@ -3,6 +3,8 @@ station:
 
 camera:
   index: 0
+  # Optional stable path; when set, this takes precedence over index.
+  # device: "/dev/v4l/by-id/usb-046d_C270_HD_WEBCAM_200901010001-video-index0"
 
 scanner:
   device: "/dev/input/by-id/usb-Datalogic_ADC_Inc._Handheld_Barcode_Scanner-event-kbd"

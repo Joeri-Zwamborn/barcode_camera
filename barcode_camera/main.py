@@ -32,6 +32,7 @@ def scan_loop(camera, scanner, stop_event):
                     if not save_image(barcode, frame):
                         logger.error("Photo could not be saved for scanned barcode")
                     continue
+                logger.warning("Scan rejected: no fresh camera frame; rescan when camera recovers")
                     
         except Exception:
             logger.exception("Scanner loop failed")
