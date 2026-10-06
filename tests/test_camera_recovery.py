@@ -87,8 +87,35 @@ class CameraRecoveryTests(unittest.TestCase):
             self.stop.set()
             return False, None
         capture.read.side_effect = read
-        self.camera._loop()
-        self.module.cv2.VideoCapture.assert_called_once_with(device, 200)
+        with patch.object(self.module.Path, 'resolve', return_value='/dev/video3'):
+            self.camera._loop()
+        self.module.cv2.VideoCapture.assert_called_once_with(3, 200)
+
+    def test_device_path_is_resolved_again_after_reconnect(self):
+        self.camera.index = '/dev/v4l/by-id/usb-C270-video-index0'
+        missing, available = Mock(), Mock()
+        missing.isOpened.return_value = False
+        available.isOpened.return_value = True
+        self.module.cv2.VideoCapture.side_effect = [missing, available]
+        def read():
+            self.stop.set()
+            return False, None
+        available.read.side_effect = read
+        with patch.object(self.module.Path, 'resolve', side_effect=['/dev/video0', '/dev/video2']), patch.object(self.stop, 'wait', return_value=False):
+            self.camera._loop()
+        self.assertEqual(self.module.cv2.VideoCapture.call_args_list, [((0, 200),), ((2, 200),)])
+
+    def test_missing_device_path_does_not_fall_back_to_another_camera(self):
+        self.camera.index = '/dev/v4l/by-id/usb-missing-video-index0'
+        with patch.object(self.module.Path, 'resolve', side_effect=FileNotFoundError('disconnected')), patch.object(self.stop, 'wait', side_effect=lambda timeout: self.stop.set()):
+            self.camera._loop()
+        self.module.cv2.VideoCapture.assert_not_called()
+
+    def test_non_video_device_path_is_rejected(self):
+        self.camera.index = '/dev/v4l/by-id/usb-invalid-video-index0'
+        with patch.object(self.module.Path, 'resolve', return_value='/dev/null'), patch.object(self.stop, 'wait', side_effect=lambda timeout: self.stop.set()):
+            self.camera._loop()
+        self.module.cv2.VideoCapture.assert_not_called()
 
     def test_read_exception_invalidates_frame(self):
         capture = Mock()

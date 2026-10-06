@@ -3,6 +3,8 @@ import threading
 import logging
 import os
 import time
+import re
+from pathlib import Path
 from rate_limit import PerSecondRateLimit
 
 logger = logging.getLogger(__name__)
@@ -68,9 +70,19 @@ class Camera:
             while self.running and not self.stop_event.is_set():
                 if self.cap is None:
                     try:
-                        self.cap = cv2.VideoCapture(self.index, cv2.CAP_V4L2)
+                        source = self.index
+                        if isinstance(source, str):
+                            # Resolve again after reconnect: the same USB camera
+                            # may have acquired a different video node number.
+                            resolved = str(Path(source).resolve(strict=True))
+                            match = re.fullmatch(r"/dev/video(\d+)", resolved)
+                            if match is None:
+                                raise ValueError(f"Camera path must resolve to /dev/videoN: {source!r} -> {resolved!r}")
+                            source = int(match.group(1))
+                        logger.info("Opening camera %r using V4L2 index %s", self.index, source)
+                        self.cap = cv2.VideoCapture(source, cv2.CAP_V4L2)
                         if not self.cap.isOpened():
-                            raise RuntimeError("Cannot open camera")
+                            raise RuntimeError(f"Cannot open camera {self.index!r} using V4L2 index {source}")
                         logger.info("Camera connected")
                         failures = 0
                     except Exception:
