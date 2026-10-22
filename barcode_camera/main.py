@@ -9,6 +9,7 @@ from camera import Camera
 from scanner import BarcodeScanner
 from storage import save_image, start_upload_worker
 from config import CAMERA_INDEX
+from notifications import PhotoNotifications
 
 LOG_FILE_PATH = Path(__file__).resolve().parent.parent / "main.log"
 logger = logging.getLogger(__name__)
@@ -25,7 +26,7 @@ def configure_logging():
     )
 
 
-def scan_loop(camera, scanner, stop_event, failure_event):
+def scan_loop(camera, scanner, stop_event, failure_event, notifications=None):
     try:
         for barcode in scanner:
             if stop_event.is_set():
@@ -34,6 +35,8 @@ def scan_loop(camera, scanner, stop_event, failure_event):
             if frame is not None:
                 if not save_image(barcode, frame):
                     logger.error("Photo could not be saved for scanned barcode")
+                elif notifications is not None:
+                    notifications.photo_saved(barcode)
                 continue
             logger.warning("Scan rejected: no fresh camera frame; rescan when camera recovers")
         if not stop_event.is_set():
@@ -48,6 +51,7 @@ def main():
     camera = None
     upload_worker = None
     scanner_thread = None
+    notifications = None
     stop_event = threading.Event()
     failure_event = threading.Event()
     previous_handlers = {}
@@ -65,9 +69,10 @@ def main():
         camera = Camera(CAMERA_INDEX, stop_event)
         scanner = BarcodeScanner(stop_event)
         upload_worker = start_upload_worker(stop_event)
+        notifications = PhotoNotifications(stop_event)
         scanner_thread = threading.Thread(
             target=scan_loop,
-            args=(camera, scanner, stop_event, failure_event),
+            args=(camera, scanner, stop_event, failure_event, notifications),
             daemon=True,
         )
         scanner_thread.start()
@@ -83,6 +88,8 @@ def main():
             scanner_thread.join(timeout=2)
         if upload_worker is not None:
             upload_worker.join(timeout=5)
+        if notifications is not None:
+            notifications.close()
         if camera is not None:
             camera.close()
         if failure_event.is_set() or (camera is not None and camera.failure_event.is_set()):

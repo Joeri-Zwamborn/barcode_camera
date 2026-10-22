@@ -25,6 +25,7 @@ sudo apt install -y \
     python3-opencv \
     python3-evdev \
     python3-yaml \
+    python3-tk \
     python3-venv \
     git
 

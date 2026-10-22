@@ -171,6 +171,18 @@ both final and temporary photo paths remain inside the configured image director
 
 ### Background uploads and offline recovery
 
+After a successful local save, a green **Photo saved** popup with the barcode
+appears at the bottom-right of the Pi's desktop for about two seconds. This
+confirms the local PNG is saved; Azure upload happens separately. Failed saves
+and scans without a fresh frame never show a success popup. During rapid scanning,
+the newest pending confirmation replaces older pending ones.
+
+The installer includes `python3-tk`. The popup needs a logged-in desktop session
+accessible to the service user. It works independently of the camera preview,
+including when `BARCODE_CAMERA_PREVIEW=off`. If desktop access is unavailable,
+capture continues and the journal reports that confirmation is unavailable.
+The popup runs separately so a GUI failure cannot crash the camera service.
+
 For photos in the `production/` folder of the `photos` container, set these keys
 under the existing `azure` section in the Pi's `config.yaml`:
 

@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class ServiceRecoveryTests(unittest.TestCase):
     def setUp(self):
-        modules = {name: types.ModuleType(name) for name in ('camera', 'scanner', 'storage', 'config')}
+        modules = {name: types.ModuleType(name) for name in ('camera', 'scanner', 'storage', 'config', 'notifications')}
+        modules['notifications'].PhotoNotifications = Mock()
         modules['camera'].Camera = Mock()
         modules['scanner'].BarcodeScanner = Mock()
         modules['storage'].save_image = Mock(return_value=True)
@@ -34,6 +35,34 @@ class ServiceRecoveryTests(unittest.TestCase):
         self.main.scan_loop(Mock(), broken_scanner(), stop, failed)
         self.assertTrue(stop.is_set())
         self.assertTrue(failed.is_set())
+
+    def test_popup_only_follows_a_successful_local_save(self):
+        for saved in (True, False):
+            with self.subTest(saved=saved):
+                stop, failed = threading.Event(), threading.Event()
+                notifications = Mock()
+                camera = Mock()
+                self.main.save_image.return_value = saved
+                def scans():
+                    yield '00123'
+                    stop.set()
+                self.main.scan_loop(camera, scans(), stop, failed, notifications)
+                if saved:
+                    notifications.photo_saved.assert_called_once_with('00123')
+                else:
+                    notifications.photo_saved.assert_not_called()
+                self.assertFalse(failed.is_set())
+
+    def test_rejected_scan_does_not_show_a_success_popup(self):
+        stop, failed = threading.Event(), threading.Event()
+        camera, notifications = Mock(), Mock()
+        camera.get_frame.return_value = None
+        def scans():
+            yield '00123'
+            stop.set()
+        self.main.scan_loop(camera, scans(), stop, failed, notifications)
+        notifications.photo_saved.assert_not_called()
+        self.main.save_image.assert_not_called()
 
     def test_unexpected_scanner_end_signals_failure(self):
         stop, failed = threading.Event(), threading.Event()
