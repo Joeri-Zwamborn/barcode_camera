@@ -36,6 +36,18 @@ class CameraRecoveryTests(unittest.TestCase):
         self.stop.set()
         self.assertIsNone(self.camera.get_frame())
 
+    def test_disabled_preview_does_not_open_a_window(self):
+        self.module.cv2.namedWindow = Mock()
+        with patch.dict(self.module.os.environ, {'BARCODE_CAMERA_PREVIEW': 'off'}):
+            self.assertFalse(self.camera._display_is_available())
+        self.module.cv2.namedWindow.assert_not_called()
+
+    def test_missing_desktop_credentials_does_not_open_a_window(self):
+        self.module.cv2.namedWindow = Mock()
+        with patch.dict(self.module.os.environ, {}, clear=True), patch.object(self.module.Path, 'home', return_value=Path('/home/plisse')), patch.object(self.module.os.path, 'exists', return_value=True), patch.object(self.module.os.path, 'isfile', return_value=False):
+            self.assertFalse(self.camera._display_is_available())
+        self.module.cv2.namedWindow.assert_not_called()
+
     def test_failures_clear_frame_and_reconnect_then_resume(self):
         first, second = Mock(), Mock()
         first.isOpened.return_value = second.isOpened.return_value = True

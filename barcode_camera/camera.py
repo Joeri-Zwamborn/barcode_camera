@@ -34,10 +34,17 @@ class Camera:
         self.capture_thread.start()
 
     def _display_is_available(self):
+        if os.environ.get("BARCODE_CAMERA_PREVIEW", "auto").lower() in {"0", "false", "off"}:
+            return False
         if not os.path.exists("/tmp/.X11-unix/X0"):
             return False
-        os.environ["DISPLAY"] = ":0"
-        os.environ["XAUTHORITY"] = "/home/admin/.Xauthority"
+        authority = os.environ.get("XAUTHORITY") or str(Path.home() / ".Xauthority")
+        # Merely finding an X socket does not grant access to the desktop.
+        # Qt may abort the whole process rather than raise a cv2 exception.
+        if not os.path.isfile(authority) or not os.access(authority, os.R_OK):
+            return False
+        os.environ.setdefault("DISPLAY", ":0")
+        os.environ["XAUTHORITY"] = authority
 
         if self.preview_available:
             return True
