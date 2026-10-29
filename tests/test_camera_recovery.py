@@ -12,6 +12,12 @@ class CameraRecoveryTests(unittest.TestCase):
         cv2 = types.ModuleType('cv2')
         cv2.CAP_V4L2 = 200
         cv2.VideoCapture = Mock()
+        cv2.error = RuntimeError
+        cv2.INTER_LINEAR = 1
+        cv2.BORDER_CONSTANT = 0
+        cv2.getWindowImageRect = Mock()
+        cv2.resize = Mock()
+        cv2.copyMakeBorder = Mock()
         rate_limit = types.ModuleType('rate_limit')
         spec = importlib.util.spec_from_file_location('rate_limit',
             Path(__file__).resolve().parents[1] / 'barcode_camera' / 'rate_limit.py')
@@ -41,6 +47,24 @@ class CameraRecoveryTests(unittest.TestCase):
         with patch.dict(self.module.os.environ, {'BARCODE_CAMERA_PREVIEW': 'off'}):
             self.assertFalse(self.camera._display_is_available())
         self.module.cv2.namedWindow.assert_not_called()
+
+    def test_preview_scales_to_monitor_without_distorting_capture(self):
+        frame = types.SimpleNamespace(shape=(480, 640, 3))
+        self.module.cv2.getWindowImageRect.return_value = (0, 0, 1920, 1080)
+        result = self.camera._fit_preview_frame(frame)
+        self.module.cv2.resize.assert_called_once_with(frame, (1440, 1080), interpolation=1)
+        self.module.cv2.copyMakeBorder.assert_called_once_with(
+            self.module.cv2.resize.return_value, 0, 0, 240, 240, 0, value=(0, 0, 0))
+        self.assertIs(result, self.module.cv2.copyMakeBorder.return_value)
+        self.assertEqual(frame.shape, (480, 640, 3))
+
+    def test_preview_uses_original_if_window_size_is_not_available(self):
+        frame = types.SimpleNamespace(shape=(480, 640, 3))
+        self.module.cv2.getWindowImageRect.return_value = (0, 0, 0, 0)
+        self.assertIs(self.camera._fit_preview_frame(frame), frame)
+        self.module.cv2.getWindowImageRect.side_effect = RuntimeError('unsupported')
+        self.assertIs(self.camera._fit_preview_frame(frame), frame)
+        self.module.cv2.resize.assert_not_called()
 
     def test_missing_desktop_credentials_does_not_open_a_window(self):
         self.module.cv2.namedWindow = Mock()

@@ -56,7 +56,12 @@ class Camera:
 
         if not self.preview_available:
             try:
-                cv2.namedWindow(self.WINDOW_NAME, cv2.WINDOW_NORMAL)
+                cv2.namedWindow(
+                    self.WINDOW_NAME,
+                    cv2.WINDOW_NORMAL | cv2.WINDOW_FREERATIO | cv2.WINDOW_GUI_NORMAL,
+                )
+                # Let the desktop create the window before making it fullscreen.
+                cv2.waitKey(1)
                 cv2.setWindowProperty(
                     self.WINDOW_NAME,
                     cv2.WND_PROP_FULLSCREEN,
@@ -143,17 +148,40 @@ class Camera:
         while not self.stop_event.is_set():
             if self._display_is_available():
                 frame = self.get_frame()
-                with self.lock:
-                    if frame is not None:
-                        cv2.imshow(self.WINDOW_NAME, frame)
-                        # Process preview events without letting keyboard input
-                        # stop the unattended production service.
-                        cv2.waitKey(1)
+                if frame is not None:
+                    cv2.imshow(self.WINDOW_NAME, self._fit_preview_frame(frame))
+                    # Process preview events without letting keyboard input
+                    # stop the unattended production service.
+                    cv2.waitKey(1)
                 if frame is None:
                     cv2.waitKey(1)
                     self.stop_event.wait(0.05)
             else:
                 time.sleep(0.01)
+
+    def _fit_preview_frame(self, frame):
+        """Scale the display copy to fullscreen without altering capture data."""
+        try:
+            _, _, width, height = cv2.getWindowImageRect(self.WINDOW_NAME)
+        except (cv2.error, AttributeError):
+            return frame
+        if width <= 0 or height <= 0:
+            return frame
+        source_height, source_width = frame.shape[:2]
+        scale = min(width / source_width, height / source_height)
+        scaled_width = max(1, min(width, round(source_width * scale)))
+        scaled_height = max(1, min(height, round(source_height * scale)))
+        if (scaled_width, scaled_height) != (source_width, source_height):
+            frame = cv2.resize(frame, (scaled_width, scaled_height), interpolation=cv2.INTER_LINEAR)
+        horizontal = width - scaled_width
+        vertical = height - scaled_height
+        if horizontal or vertical:
+            frame = cv2.copyMakeBorder(
+                frame, vertical // 2, vertical - vertical // 2,
+                horizontal // 2, horizontal - horizontal // 2,
+                cv2.BORDER_CONSTANT, value=(0, 0, 0),
+            )
+        return frame
 
     def get_frame(self):
 

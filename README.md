@@ -296,6 +296,10 @@ The installer updates the service without requiring manual configuration.
 
 ### Camera disconnects and stale frames
 
+The preview scales the display copy to fill the fullscreen window as far as its
+aspect ratio allows. Black borders fill any remaining space, without stretching
+or cropping the image. This scaling does not change the saved photo resolution.
+
 Captures only use frames received within the last second. A failed frame read
 immediately clears the cached image, so subsequent barcodes cannot reuse that
 image. Scans without a fresh frame are rejected and logged; rescan the item after
