@@ -4,6 +4,8 @@ import logging
 import os
 import time
 import re
+import subprocess
+import sys
 from pathlib import Path
 from rate_limit import PerSecondRateLimit
 
@@ -24,6 +26,7 @@ class Camera:
         self.frame = None
         self.frame_received_at = None
         self.preview_available = False
+        self.preview_size = None
         self.next_preview_check = 0.0
         self.lock = threading.Lock()
         self.stop_event = stop_event
@@ -56,11 +59,14 @@ class Camera:
 
         if not self.preview_available:
             try:
+                self.preview_size = self._desktop_size()
                 cv2.namedWindow(
                     self.WINDOW_NAME,
                     cv2.WINDOW_NORMAL | cv2.WINDOW_FREERATIO | cv2.WINDOW_GUI_NORMAL,
                 )
                 # Let the desktop create the window before making it fullscreen.
+                if self.preview_size is not None:
+                    cv2.resizeWindow(self.WINDOW_NAME, *self.preview_size)
                 cv2.waitKey(1)
                 cv2.setWindowProperty(
                     self.WINDOW_NAME,
@@ -75,6 +81,25 @@ class Camera:
                 self.preview_available = False
 
             return self.preview_available
+
+    def _desktop_size(self):
+        """Read screen dimensions independently of the camera image/window."""
+        try:
+            # Probe in a child so a display/toolkit failure cannot abort capture.
+            result = subprocess.run(
+                [sys.executable, "-c",
+                 "import tkinter as tk; r=tk.Tk(); r.withdraw(); "
+                 "print(r.winfo_screenwidth(), r.winfo_screenheight()); r.destroy()"],
+                capture_output=True, text=True, timeout=3, check=True,
+            )
+            width, height = map(int, result.stdout.strip().split())
+            if not (16 <= width <= 16384 and 16 <= height <= 16384):
+                raise ValueError("Invalid desktop dimensions")
+            logger.info("Preview desktop size: %sx%s", width, height)
+            return width, height
+        except Exception:
+            logger.warning("Could not read desktop size; using native fullscreen scaling")
+            return None
 
     def _loop(self):
         failures = 0
@@ -161,12 +186,9 @@ class Camera:
 
     def _fit_preview_frame(self, frame):
         """Scale the display copy to fullscreen without altering capture data."""
-        try:
-            _, _, width, height = cv2.getWindowImageRect(self.WINDOW_NAME)
-        except (cv2.error, AttributeError):
+        if self.preview_size is None:
             return frame
-        if width <= 0 or height <= 0:
-            return frame
+        width, height = self.preview_size
         source_height, source_width = frame.shape[:2]
         scale = min(width / source_width, height / source_height)
         scaled_width = max(1, min(width, round(source_width * scale)))

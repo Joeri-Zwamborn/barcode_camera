@@ -50,7 +50,7 @@ class CameraRecoveryTests(unittest.TestCase):
 
     def test_preview_scales_to_monitor_without_distorting_capture(self):
         frame = types.SimpleNamespace(shape=(480, 640, 3))
-        self.module.cv2.getWindowImageRect.return_value = (0, 0, 1920, 1080)
+        self.camera.preview_size = (1920, 1080)
         result = self.camera._fit_preview_frame(frame)
         self.module.cv2.resize.assert_called_once_with(frame, (1440, 1080), interpolation=1)
         self.module.cv2.copyMakeBorder.assert_called_once_with(
@@ -60,11 +60,27 @@ class CameraRecoveryTests(unittest.TestCase):
 
     def test_preview_uses_original_if_window_size_is_not_available(self):
         frame = types.SimpleNamespace(shape=(480, 640, 3))
-        self.module.cv2.getWindowImageRect.return_value = (0, 0, 0, 0)
-        self.assertIs(self.camera._fit_preview_frame(frame), frame)
-        self.module.cv2.getWindowImageRect.side_effect = RuntimeError('unsupported')
+        self.camera.preview_size = None
         self.assertIs(self.camera._fit_preview_frame(frame), frame)
         self.module.cv2.resize.assert_not_called()
+
+    def test_preview_size_does_not_shrink_with_reported_image_area(self):
+        frame = types.SimpleNamespace(shape=(480, 640, 3))
+        self.camera.preview_size = (1920, 1080)
+        self.module.cv2.getWindowImageRect.return_value = (0, 0, 320, 240)
+        for _ in range(3):
+            self.camera._fit_preview_frame(frame)
+        self.module.cv2.getWindowImageRect.assert_not_called()
+        self.assertTrue(all(call.args[1] == (1440, 1080) for call in self.module.cv2.resize.call_args_list))
+
+    def test_desktop_size_comes_from_independent_display_probe(self):
+        with patch.object(self.module.subprocess, 'run', return_value=types.SimpleNamespace(stdout='1920 1080\n')):
+            self.assertEqual(self.camera._desktop_size(), (1920, 1080))
+
+    def test_desktop_probe_failure_falls_back_without_stopping_capture(self):
+        with patch.object(self.module.subprocess, 'run', side_effect=OSError('no desktop')):
+            self.assertIsNone(self.camera._desktop_size())
+        self.assertFalse(self.stop.is_set())
 
     def test_missing_desktop_credentials_does_not_open_a_window(self):
         self.module.cv2.namedWindow = Mock()
