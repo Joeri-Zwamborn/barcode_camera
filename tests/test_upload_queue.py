@@ -1,4 +1,5 @@
 import importlib.util
+import datetime
 import sys
 import uuid
 import threading
@@ -29,6 +30,10 @@ class UploadQueueTests(unittest.TestCase):
         barcode_spec = importlib.util.spec_from_file_location('barcodes',
             Path(__file__).resolve().parents[1] / 'barcode_camera' / 'barcodes.py')
         barcode_spec.loader.exec_module(modules['barcodes'])
+        camera_config_spec = importlib.util.spec_from_file_location('camera_config',
+            Path(__file__).resolve().parents[1] / 'barcode_camera' / 'camera_config.py')
+        modules['camera_config'] = importlib.util.module_from_spec(camera_config_spec)
+        camera_config_spec.loader.exec_module(modules['camera_config'])
         modules['config'].LOCAL_SAVE_DIR = self.directory.name
         modules['config'].AZURE_ENABLED = True
         modules['config'].AZURE = {'container': 'photos'}
@@ -51,6 +56,25 @@ class UploadQueueTests(unittest.TestCase):
             upload.assert_not_called()
         self.assertEqual(len(list(Path(self.directory.name).glob('*.png'))), 2)
         self.assertEqual(list(Path(self.directory.name).glob('*.pending')), [])
+
+    def test_multicamera_filenames_share_capture_id_and_preserve_date_suffix(self):
+        capture_id = 'a' * 32
+        captured_at = datetime.datetime(2026, 11, 17, 10, 20, 30, 123456)
+        for name in ('front', 'side'):
+            self.assertTrue(self.storage.save_image('00123', object(), camera_name=name, capture_id=capture_id, captured_at=captured_at))
+        names = [path.name for path in Path(self.directory.name).glob('*.png')]
+        self.assertEqual(len(names), 2)
+        for camera in ('front', 'side'):
+            self.assertTrue(any(name.startswith(f'00123_{capture_id}_{camera}_2026-11-17 ') for name in names))
+        self.storage.upload_pending_once(self.stop, self.service)
+        self.assertEqual(list(Path(self.directory.name).glob('*.png')), [])
+
+    def test_invalid_camera_names_and_capture_ids_cannot_escape_storage(self):
+        for camera in ('../escape', '/absolute', 'bad/name', 'a' * 33):
+            self.assertFalse(self.storage.save_image('00123', object(), camera_name=camera))
+        self.assertFalse(self.storage.save_image('00123', object(), camera_name='front', capture_id='../escape'))
+        self.storage.cv2.imencode.assert_not_called()
+        self.assertEqual(list(Path(self.directory.name).iterdir()), [])
 
     def test_failed_upload_survives_and_later_retry_removes_file(self):
         photo = Path(self.directory.name) / 'old.png'

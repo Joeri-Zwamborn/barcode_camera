@@ -4,11 +4,13 @@ from pathlib import Path
 import signal
 import sys
 import threading
+import datetime
+import uuid
 
-from camera import Camera
+from camera_rig import CameraRig
 from scanner import BarcodeScanner
 from storage import save_image, start_upload_worker
-from config import CAMERA_INDEX
+from config import CAMERAS
 from notifications import PhotoNotifications
 
 LOG_FILE_PATH = Path(__file__).resolve().parent.parent / "main.log"
@@ -31,14 +33,28 @@ def scan_loop(camera, scanner, stop_event, failure_event, notifications=None):
         for barcode in scanner:
             if stop_event.is_set():
                 break
-            frame = camera.get_frame()
-            if frame is not None:
-                if not save_image(barcode, frame):
-                    logger.error("Photo could not be saved for scanned barcode")
-                elif notifications is not None:
-                    notifications.photo_saved(barcode)
+            frames = camera.get_frames()
+            missing = [name for name, frame in frames if frame is None]
+            if not frames or missing:
+                logger.warning("Scan rejected: no fresh frame from %s; rescan when cameras recover", ", ".join(missing) or "any camera")
+                if notifications is not None:
+                    notifications.capture_failed(barcode, "Camera unavailable - rescan when ready")
                 continue
-            logger.warning("Scan rejected: no fresh camera frame; rescan when camera recovers")
+            capture_id = uuid.uuid4().hex
+            captured_at = datetime.datetime.now()
+            saved = 0
+            for name, frame in frames:
+                if save_image(barcode, frame, camera_name=name, capture_id=capture_id, captured_at=captured_at):
+                    saved += 1
+                else:
+                    logger.error("Photo could not be saved for camera %s, capture %s", name, capture_id)
+            if saved == len(frames):
+                if notifications is not None:
+                    notifications.photo_saved(barcode)
+            else:
+                logger.error("Incomplete capture %s: saved %s/%s photos; rescan required", capture_id, saved, len(frames))
+                if notifications is not None:
+                    notifications.capture_failed(barcode, f"Saved {saved}/{len(frames)} photos - rescan required")
         if not stop_event.is_set():
             raise RuntimeError("Scanner stopped unexpectedly")
     except Exception:
@@ -66,7 +82,7 @@ def main():
     try:
         for signum in (signal.SIGTERM, signal.SIGINT):
             previous_handlers[signum] = signal.signal(signum, request_shutdown)
-        camera = Camera(CAMERA_INDEX, stop_event)
+        camera = CameraRig(CAMERAS, stop_event)
         scanner = BarcodeScanner(stop_event)
         upload_worker = start_upload_worker(stop_event)
         notifications = PhotoNotifications(stop_event)

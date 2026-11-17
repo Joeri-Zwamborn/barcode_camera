@@ -13,21 +13,34 @@ from azure.identity import ClientSecretCredential
 from azure.storage.blob import BlobServiceClient
 from config import AZURE_ENABLED, LOCAL_SAVE_DIR, AZURE
 from barcodes import is_valid_barcode
+from camera_config import is_valid_camera_name
+import re
 
 logger = logging.getLogger(__name__)
 RETRY_SECONDS = 30
 
 
-def save_image(barcode, frame):
+def save_image(barcode, frame, *, camera_name=None, capture_id=None, captured_at=None):
     """Return success once the photo is safely saved, without waiting for Azure."""
     if not is_valid_barcode(barcode):
         logger.error("Barcode rejected: use 1–128 ASCII letters/digits, dots, underscores or hyphens, starting with a letter/digit")
         return False
+    if camera_name is not None and not is_valid_camera_name(camera_name):
+        logger.error("Invalid camera name; no photo saved")
+        return False
+    if capture_id is not None and (not isinstance(capture_id, str) or re.fullmatch(r"[0-9a-f]{32}", capture_id) is None):
+        logger.error("Invalid capture identifier; no photo saved")
+        return False
+    if captured_at is not None and not isinstance(captured_at, datetime.datetime):
+        logger.error("Invalid capture time; no photo saved")
+        return False
     directory = Path(LOCAL_SAVE_DIR).resolve()
-    now = datetime.datetime.now()
+    now = captured_at or datetime.datetime.now()
     timestamp = str(now).replace(":", "-") if os.name == "nt" else str(now)
     # Unique names also prevent two stations from overwriting the same capture.
-    filename = directory / f"{barcode}_{uuid.uuid4().hex}_{timestamp}.png"
+    identifier = capture_id or uuid.uuid4().hex
+    camera_suffix = f"_{camera_name}" if camera_name is not None else ""
+    filename = directory / f"{barcode}_{identifier}{camera_suffix}_{timestamp}.png"
     temporary = filename.with_suffix(".pending")
     try:
         directory.mkdir(parents=True, exist_ok=True)

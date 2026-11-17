@@ -21,7 +21,7 @@ class NotificationTests(unittest.TestCase):
         self.notifications.photo_saved('first')
         self.notifications.photo_saved('second')
         self.assertEqual(self.notifications.pending.qsize(), 1)
-        self.assertEqual(self.notifications.pending.get_nowait(), 'second')
+        self.assertEqual(self.notifications.pending.get_nowait(), ('second', 'saved', ''))
 
     def test_gui_process_failure_does_not_escape_the_worker(self):
         self.notifications.photo_saved('00123')
@@ -31,6 +31,10 @@ class NotificationTests(unittest.TestCase):
         with patch.object(self.module.subprocess, 'run', side_effect=failed_popup):
             self.notifications._run()
         self.assertTrue(self.notifications.warned)
+
+    def test_failed_capture_has_its_own_warning_notification(self):
+        self.notifications.capture_failed('00123', 'Camera unavailable')
+        self.assertEqual(self.notifications.pending.get_nowait(), ('00123', 'failed', 'Camera unavailable'))
 
     def test_popup_is_bottom_right_and_closes_automatically(self):
         root = Mock()

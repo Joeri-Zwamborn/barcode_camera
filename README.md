@@ -156,6 +156,76 @@ SHAREPOINT = {
 }
 ## Running the Application
 
+### Multiple cameras
+
+The existing `camera:` configuration remains supported. Until the new cameras
+arrive, keep that configuration: one scan continues to save one photo.
+
+When ready, replace the single `camera:` section in `config.yaml` with:
+
+```yaml
+cameras:
+  - name: "front"
+    device: "/dev/v4l/by-id/YOUR_FRONT_CAMERA-video-index0"
+  - name: "side"
+    device: "/dev/v4l/by-id/YOUR_SIDE_CAMERA-video-index0"
+```
+
+Use the paths from `ls -l /dev/v4l/by-id/` on that station. Each physical camera
+needs its capture node (usually `video-index0`), not two nodes from one camera.
+If identical cameras do not have distinct by-id links, use their
+`/dev/v4l/by-path/` links and keep them plugged into the assigned USB ports.
+Numeric `index:` values still work, but can change after USB reconnection.
+Do not configure both `camera:` and `cameras:`. Camera names must be unique,
+1-32 ASCII letters/digits/hyphens/underscores, starting with a letter or digit.
+Duplicate names and repeated device/index selections are rejected at startup.
+Different aliases for the same physical device are not automatically detected.
+
+Each camera runs its own capture/reconnect loop. One barcode scan snapshots all
+camera frames before encoding/saving any image. Every configured camera must
+have a fresh frame (less than one second old); otherwise the whole scan is
+rejected without saving photos and a red notification requests a rescan.
+Once recovered, rescan with the same item still in position. Scans are not held
+for later capture. These are software snapshots of independent USB streams,
+not hardware-synchronized exposures.
+
+New captures, including single-camera captures, use names such as:
+
+```text
+00123_<shared-capture-id>_front_2026-11-17 10:20:30.123456.png
+00123_<shared-capture-id>_side_2026-11-17 10:20:30.123456.png
+```
+
+The same scan shares its identifier and timestamp across camera views; rescanning
+creates a new identifier. Barcodes, camera labels and the trailing capture date
+remain searchable in the existing web app. Existing queued photos keep working.
+The dashboard counts individual photos, not scanned items.
+
+A green **Photos saved** notification appears only when all views are saved
+locally. Saves and Azure uploads are per file, not a transaction: a disk/write
+failure partway through can leave an incomplete set locally or in Azure. The red
+notification and log report how many saves succeeded; investigate and rescan.
+Successfully saved files are retained for upload. Notifications need desktop
+access; on headless stations, monitor the journal instead.
+
+With multiple cameras the preview is a labelled grid, including an unavailable
+placeholder for disconnected cameras. Single-camera preview stays fullscreen.
+Preview scaling/labels do not change the saved photos.
+
+Deploy all updated Python modules together (including `camera_config.py` and
+`camera_rig.py`), then rerun `./install.sh` as the normal service account. Do not
+enable placeholder camera entries before the hardware is connected. Existing
+`config.yaml` files are not overwritten by the installer.
+
+Hardware acceptance is still required: check each view with a distinct object,
+scan the same barcode twice and verify two separate complete groups, disconnect
+one camera and confirm no partial capture/success popup, reconnect and rescan,
+reboot, and repeat offline upload recovery with all views. Check CPU usage, frame
+freshness, USB bandwidth/power, disk space, and image quality under sustained
+production scanning on the actual Pi. Adding cameras increases storage and
+upload traffic. Automated tests use simulated cameras; they do not establish
+the supported camera count or timing on your hardware.
+
 ### Barcode validation
 
 Barcodes must contain 1–128 ASCII characters, start with a letter or digit, and
@@ -171,7 +241,7 @@ both final and temporary photo paths remain inside the configured image director
 
 ### Background uploads and offline recovery
 
-After a successful local save, a green **Photo saved** popup with the barcode
+After a successful local capture, a green **Photos saved** popup with the barcode
 appears at the bottom-right of the Pi's desktop for about two seconds. This
 confirms the local PNG is saved; Azure upload happens separately. Failed saves
 and scans without a fresh frame never show a success popup. During rapid scanning,

@@ -169,15 +169,17 @@ class Camera:
             self.cap.release()
             self.cap = None
 
-    def run_preview(self):
+    def run_preview(self, frame_provider=None):
+        frame_provider = frame_provider or self.get_frame
         while not self.stop_event.is_set():
             if self._display_is_available():
-                frame = self.get_frame()
+                frame = frame_provider()
                 if frame is not None:
                     cv2.imshow(self.WINDOW_NAME, self._fit_preview_frame(frame))
                     # Process preview events without letting keyboard input
                     # stop the unattended production service.
                     cv2.waitKey(1)
+                    self.stop_event.wait(0.03)
                 if frame is None:
                     cv2.waitKey(1)
                     self.stop_event.wait(0.05)
